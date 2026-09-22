@@ -486,9 +486,8 @@
 
     <!-- Quick Presets -->
     <div class="presets">
-      <button class="preset-btn" onclick="applyPreset('songjeong_dongtan')">🚄 광주송정 ➔ 동탄 (기본)</button>
-      <button class="preset-btn" onclick="applyPreset('dongtan_songjeong')">🚄 동탄 ➔ 광주송정</button>
-      <button class="preset-btn" onclick="applyPreset('seoul_daegu')">🌕 서울 ➔ 동대구</button>
+      <button class="preset-btn" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; font-weight: 700;" onclick="applyPreset('real_0928')">🌕 실전: 9월 28일 (07:53 608호)</button>
+      <button class="preset-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; font-weight: 700;" onclick="applyPreset('test_1012')">🧪 테스트: 10월 12일 (좌석 있는 날)</button>
     </div>
 
     <!-- Setting Card -->
@@ -512,23 +511,23 @@
           <input type="text" id="depDate" value="20260928" placeholder="20260928">
         </div>
         <div class="form-group">
-          <label>검색 시작 시간 (HH)</label>
-          <input type="text" id="depHour" value="18" placeholder="18">
+          <label>출발 시간 (HHMM)</label>
+          <input type="text" id="depHour" value="0700" placeholder="0700 또는 07">
         </div>
         <div class="form-group">
           <label>지정 열차 번호 (옵션)</label>
-          <input type="text" id="trnNo" value="" placeholder="예: 00608 (공백 시 전체 열차 탐색)">
-          <span class="helper-text">0을 포함한 5자리 (예: 00241)</span>
+          <input type="text" id="trnNo" value="608" placeholder="예: 608 또는 00608 (비워두면 첫 번째 열차)">
+          <span class="helper-text">숫자만 입력 (예: 608 또는 00608)</span>
         </div>
       </div>
 
       <div class="form-group">
         <label>좌석 탐색 우선순위</label>
         <select id="seatPref">
-          <option value="gen_first" selected>일반실 우선 (없으면 특실)</option>
-          <option value="spec_first">특실 우선 (없으면 일반실)</option>
-          <option value="gen_only">일반실만</option>
+          <option value="spec_first" selected>특실 우선 (일반실도 가능)</option>
+          <option value="gen_first">일반실 우선 (특실도 가능)</option>
           <option value="spec_only">특실만</option>
+          <option value="gen_only">일반실만</option>
         </select>
       </div>
     </div>
@@ -645,27 +644,20 @@
 
     // Preset handler
     function applyPreset(type) {
-      if (type === 'songjeong_dongtan') {
+      if (type === 'real_0928') {
         document.getElementById('depStn').value = '광주송정';
         document.getElementById('arrStn').value = '동탄';
         document.getElementById('depDate').value = '20260928';
-        document.getElementById('depHour').value = '10';
-        document.getElementById('trnNo').value = '';
-        document.getElementById('seatPref').value = 'gen_first';
-      } else if (type === 'dongtan_songjeong') {
-        document.getElementById('depStn').value = '동탄';
-        document.getElementById('arrStn').value = '광주송정';
-        document.getElementById('depDate').value = '20260928';
-        document.getElementById('depHour').value = '14';
-        document.getElementById('trnNo').value = '';
-        document.getElementById('seatPref').value = 'gen_first';
-      } else if (type === 'seoul_daegu') {
-        document.getElementById('depStn').value = '서울';
-        document.getElementById('arrStn').value = '동대구';
-        document.getElementById('depDate').value = '20260928';
-        document.getElementById('depHour').value = '18';
-        document.getElementById('trnNo').value = '';
-        document.getElementById('seatPref').value = 'gen_first';
+        document.getElementById('depHour').value = '0700';
+        document.getElementById('trnNo').value = '608';
+        document.getElementById('seatPref').value = 'spec_first';
+      } else if (type === 'test_1012') {
+        document.getElementById('depStn').value = '광주송정';
+        document.getElementById('arrStn').value = '동탄';
+        document.getElementById('depDate').value = '20261012';
+        document.getElementById('depHour').value = '0700';
+        document.getElementById('trnNo').value = '608';
+        document.getElementById('seatPref').value = 'spec_first';
       }
       updateBookmarklet();
     }
@@ -675,7 +667,7 @@
       const dep = document.getElementById('depStn').value.trim() || '광주송정';
       const arr = document.getElementById('arrStn').value.trim() || '동탄';
       const dt = document.getElementById('depDate').value.trim() || '20260928';
-      const tm = document.getElementById('depHour').value.trim().padStart(2, '0') || '18';
+      const tm = (document.getElementById('depHour').value.trim() || '07').slice(0, 2).padStart(2, '0');
       const trn = document.getElementById('trnNo').value.trim();
       const pref = document.getElementById('seatPref').value;
       const tgTok = document.getElementById('tgToken').value.trim();
@@ -710,7 +702,7 @@
         + `var d=await r.json();`
         + `if(!d.trn_infos||!d.trn_infos.trn_info){log('조회 결과 없음');return;}`
         + `var list=Array.isArray(d.trn_infos.trn_info)?d.trn_infos.trn_info:[d.trn_infos.trn_info];`
-        + (trn ? `list=list.filter(function(x){return x.h_trn_no==='${trn}';});` : ``)
+        + (trn ? `list=list.filter(function(x){var tNo=x.h_trn_no||'';return tNo==='${trn}'||tNo==='${trn}'.padStart(5,'0')||tNo.endsWith('${trn}');});` : ``)
         + `for(var i=0;i<list.length;i++){`
         + `var t=list[i];`
         + `var gAv=t.h_gen_rsv_cd==='11';`
