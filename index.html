@@ -762,7 +762,9 @@
       const dep = document.getElementById('depStn').value.trim() || '광주송정';
       const arr = document.getElementById('arrStn').value.trim() || '동탄';
       const dt = document.getElementById('depDate').value.trim() || '20260928';
-      const tm = (document.getElementById('depHour').value.trim() || '07').slice(0, 2).padStart(2, '0');
+      let tmRaw = document.getElementById('depHour').value.trim() || '0700';
+      if (tmRaw.length <= 2) tmRaw = tmRaw.padStart(2, '0') + '00'; // HH만 입력 시 분은 00으로 간주
+      const tm = tmRaw.padEnd(4, '0').slice(0, 4) + '00'; // HHMM -> HHMMSS (코레일 API 요구 포맷)
       const trn = document.getElementById('trnNo').value.trim();
       const pref = document.getElementById('seatPref').value;
       const tgTok = document.getElementById('tgToken').value.trim();
