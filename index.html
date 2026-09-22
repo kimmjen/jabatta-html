@@ -486,9 +486,9 @@
 
     <!-- Quick Presets -->
     <div class="presets">
-      <button class="preset-btn" onclick="applyPreset('0928_daegu')">🌕 9월 28일 서울 ➔ 동대구 (KTX 241)</button>
-      <button class="preset-btn" onclick="applyPreset('0925_daegu')">🌕 9월 25일 서울 ➔ 동대구 (KTX 059)</button>
-      <button class="preset-btn" onclick="applyPreset('today_busan')">🚄 오늘 서울 ➔ 부산</button>
+      <button class="preset-btn" onclick="applyPreset('songjeong_dongtan')">🚄 광주송정 ➔ 동탄 (기본)</button>
+      <button class="preset-btn" onclick="applyPreset('dongtan_songjeong')">🚄 동탄 ➔ 광주송정</button>
+      <button class="preset-btn" onclick="applyPreset('seoul_daegu')">🌕 서울 ➔ 동대구</button>
     </div>
 
     <!-- Setting Card -->
@@ -498,11 +498,11 @@
       <div class="grid-2">
         <div class="form-group">
           <label>출발역</label>
-          <input type="text" id="depStn" value="서울" placeholder="예: 서울, 용산, 수서">
+          <input type="text" id="depStn" value="광주송정" placeholder="예: 광주송정, 서울, 용산">
         </div>
         <div class="form-group">
           <label>도착역</label>
-          <input type="text" id="arrStn" value="동대구" placeholder="예: 동대구, 부산, 광주송정">
+          <input type="text" id="arrStn" value="동탄" placeholder="예: 동탄, 수서, 서울">
         </div>
       </div>
 
@@ -517,7 +517,7 @@
         </div>
         <div class="form-group">
           <label>지정 열차 번호 (옵션)</label>
-          <input type="text" id="trnNo" value="00241" placeholder="예: 00241 (공백 시 전체)">
+          <input type="text" id="trnNo" value="" placeholder="예: 00608 (공백 시 전체 열차 탐색)">
           <span class="helper-text">0을 포함한 5자리 (예: 00241)</span>
         </div>
       </div>
@@ -645,26 +645,25 @@
 
     // Preset handler
     function applyPreset(type) {
-      if (type === '0928_daegu') {
+      if (type === 'songjeong_dongtan') {
+        document.getElementById('depStn').value = '광주송정';
+        document.getElementById('arrStn').value = '동탄';
+        document.getElementById('depDate').value = '20260928';
+        document.getElementById('depHour').value = '10';
+        document.getElementById('trnNo').value = '';
+        document.getElementById('seatPref').value = 'gen_first';
+      } else if (type === 'dongtan_songjeong') {
+        document.getElementById('depStn').value = '동탄';
+        document.getElementById('arrStn').value = '광주송정';
+        document.getElementById('depDate').value = '20260928';
+        document.getElementById('depHour').value = '14';
+        document.getElementById('trnNo').value = '';
+        document.getElementById('seatPref').value = 'gen_first';
+      } else if (type === 'seoul_daegu') {
         document.getElementById('depStn').value = '서울';
         document.getElementById('arrStn').value = '동대구';
         document.getElementById('depDate').value = '20260928';
         document.getElementById('depHour').value = '18';
-        document.getElementById('trnNo').value = '00241';
-        document.getElementById('seatPref').value = 'gen_first';
-      } else if (type === '0925_daegu') {
-        document.getElementById('depStn').value = '서울';
-        document.getElementById('arrStn').value = '동대구';
-        document.getElementById('depDate').value = '20260925';
-        document.getElementById('depHour').value = '18';
-        document.getElementById('trnNo').value = '00059';
-        document.getElementById('seatPref').value = 'gen_first';
-      } else if (type === 'today_busan') {
-        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        document.getElementById('depStn').value = '서울';
-        document.getElementById('arrStn').value = '부산';
-        document.getElementById('depDate').value = today;
-        document.getElementById('depHour').value = '12';
         document.getElementById('trnNo').value = '';
         document.getElementById('seatPref').value = 'gen_first';
       }
@@ -673,8 +672,8 @@
 
     // Dynamic Bookmarklet Builder
     function updateBookmarklet() {
-      const dep = document.getElementById('depStn').value.trim() || '서울';
-      const arr = document.getElementById('arrStn').value.trim() || '동대구';
+      const dep = document.getElementById('depStn').value.trim() || '광주송정';
+      const arr = document.getElementById('arrStn').value.trim() || '동탄';
       const dt = document.getElementById('depDate').value.trim() || '20260928';
       const tm = document.getElementById('depHour').value.trim().padStart(2, '0') || '18';
       const trn = document.getElementById('trnNo').value.trim();
