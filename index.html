@@ -789,6 +789,15 @@ window.__jabatta_cnt = 0;
 
 var log = function(m){var e=document.getElementById("j_status");if(e)e.innerHTML=m;};
 
+if("${tgTok}" && "${tgChat}"){
+    fetch("https://api.telegram.org/bot${tgTok}/sendMessage", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({chat_id:"${tgChat}", text:"✅ [Jabatta] 감시 시작\n구간: ${dep} ➔ ${arr} (${dt})"})
+    }).then(function(r){ if(!r.ok) log("⚠️ 텔레그램 테스트 실패 — 토큰/chat id 확인"); })
+      .catch(function(){ log("⚠️ 텔레그램 테스트 실패 — 네트워크 확인"); });
+}
+
 var queryBody = new URLSearchParams({
     "Device":"BH","Version":"999999999","Key":"korail1234567890","radJobId":"1","selGoTrain":"100",
     "txtGoAbrdDt":"${dt}","txtGoEnd":"${arr}","txtGoHour":"${tm}","txtGoStart":"${dep}","txtMenuId":"11",
