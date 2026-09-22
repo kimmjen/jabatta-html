@@ -463,11 +463,11 @@
     <div class="auth-card" id="auth-card">
       <div class="auth-icon">🔒</div>
       <h2>접속 인증</h2>
-      <p>비공개 도구입니다.<br>부여받은 비밀번호를 입력해 주세요.</p>
+      <p>비공개 도구입니다.<br>부여받은 비밀번호를 입력해 주세요.<br><span style="font-size:12px; color:#38bdf8;">(한글 / 영타 모두 지원)</span></p>
       
       <form id="auth-form" onsubmit="handleAuth(event)">
         <div class="auth-input-wrap">
-          <input type="password" id="auth-pwd" class="auth-input" placeholder="비밀번호 입력" autocomplete="off" autofocus>
+          <input type="password" id="auth-pwd" class="auth-input" placeholder="비밀번호 입력 (한글/영타 무관)" autocomplete="off" autofocus>
         </div>
         <button type="submit" class="auth-btn">잠금 해제</button>
         <div id="auth-error" class="auth-error"></div>
@@ -589,8 +589,30 @@
   </div>
 
   <script>
-    // SHA-256 Hash of Password: "2026"
-    const AUTH_HASH = "158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab";
+    // SHA-256 Hash of "dkssudgktpdyqorrhkdghkdlqslek" (안녕하세요백광화입니다)
+    const AUTH_HASH = "885680bc6aad6ec49dba8df957e7d0ecfdae3635ca99bd9082ba209ae4b912e5";
+
+    // 2-Set Hangul to English QWERTY converter
+    const CHO = ['r', 'R', 's', 'e', 'E', 'f', 'a', 'q', 'Q', 't', 'T', 'd', 'w', 'W', 'c', 'z', 'x', 'v', 'g'];
+    const JUNG = ['k', 'o', 'i', 'O', 'j', 'p', 'u', 'P', 'h', 'hk', 'ho', 'hl', 'y', 'n', 'nj', 'np', 'nl', 'b', 'm', 'ml', 'l'];
+    const JONG = ['', 'r', 'R', 'rt', 's', 'sw', 'sg', 'e', 'f', 'fr', 'fa', 'fq', 'ft', 'fx', 'fv', 'fg', 'a', 'q', 'qt', 't', 'T', 'd', 'w', 'c', 'z', 'x', 'v', 'g'];
+
+    function korToEng(text) {
+      let res = '';
+      for (let i = 0; i < text.length; i++) {
+        const c = text.charCodeAt(i);
+        if (c >= 0xac00 && c <= 0xd7a3) {
+          const offset = c - 0xac00;
+          const cho = Math.floor(offset / 588);
+          const jung = Math.floor((offset % 588) / 28);
+          const jong = offset % 28;
+          res += CHO[cho] + JUNG[jung] + JONG[jong];
+        } else {
+          res += text[i];
+        }
+      }
+      return res.toLowerCase();
+    }
 
     async function sha256(message) {
       const msgBuffer = new TextEncoder().encode(message);
@@ -604,14 +626,17 @@
       const pwdInput = document.getElementById('auth-pwd');
       const errEl = document.getElementById('auth-error');
       const cardEl = document.getElementById('auth-card');
-      const val = pwdInput.value.trim();
+      const rawVal = pwdInput.value.replace(/\s+/g, '');
 
-      if (!val) {
+      if (!rawVal) {
         errEl.innerText = "비밀번호를 입력하세요.";
         return;
       }
 
-      const inputHash = await sha256(val);
+      // Convert to normalized QWERTY string (supports Hangul, English, mixed)
+      const normalizedKey = korToEng(rawVal);
+      const inputHash = await sha256(normalizedKey);
+
       if (inputHash === AUTH_HASH) {
         sessionStorage.setItem('jabatta_auth', 'unlocked');
         unlockUI();
