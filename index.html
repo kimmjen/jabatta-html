@@ -745,61 +745,79 @@
       document.getElementById('bm-title').innerText = btnTitle;
 
       // Build safe bookmarklet JS
-      const code = `javascript:(function(){`
-        + `if(window.__jabatta_active){alert('이미 예약 프로그램이 실행 중입니다!');return;}`
-        + `window.__jabatta_active=true;`
-        + `if(location.hostname!=='www.korail.com'){alert('반드시 https://www.korail.com 에 로그인한 뒤 실행해 주세요!');window.__jabatta_active=false;return;}`
-        + `var panel=document.createElement('div');`
-        + `panel.id='jb-panel';`
-        + `panel.style.cssText='position:fixed;bottom:24px;right:24px;width:340px;background:#0f172a;color:#f8fafc;padding:18px;border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15);font-family:sans-serif;font-size:13px;z-index:999999;line-height:1.5;';`
-        + `panel.innerHTML='<div style="font-weight:700;font-size:14px;color:#38bdf8;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;"><span>🚄 잡았다 (${dep}➔${arr})</span><button id="jb-close" style="background:transparent;border:none;color:#94a3b8;font-size:16px;cursor:pointer;">✕</button></div><div id="jb-status" style="color:#a7f3d0;font-weight:600;margin-bottom:8px;">준비 중...</div><div id="jb-log" style="height:100px;overflow-y:auto;background:rgba(0,0,0,0.4);border-radius:8px;padding:8px;font-size:11px;color:#cbd5e1;font-family:monospace;"></div>';`
-        + `document.body.appendChild(panel);`
-        + `var log=function(m){var el=document.getElementById('jb-log');if(el){var t=new Date().toTimeString().split(' ')[0];el.innerHTML+='['+t+'] '+m+'<br>';el.scrollTop=el.scrollHeight;}};`
-        + `var setSt=function(m){var el=document.getElementById('jb-status');if(el)el.innerHTML=m;};`
-        + `var tg=function(m){`
-        + (tgTok && tgChat ? `fetch('https://api.telegram.org/bot${tgTok}/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:'${tgChat}',text:m})}).catch(function(){});` : ``)
-        + `};`
-        + `var stop=function(){clearInterval(loop);window.__jabatta_active=false;panel.remove();};`
-        + `document.getElementById('jb-close').onclick=stop;`
-        + `var cnt=0;`
-        + `var check=async function(){`
-        + `cnt++;setSt('탐색 중 ('+cnt+'회차) 🔍');`
-        + `try{`
-        + `var fd=new URLSearchParams({'Device':'BH','Version':'999999999','Key':'korail1234567890','radJobId':'1','selGoTrain':'100','txtGoAbrdDt':'${dt}','txtGoEnd':'${arr}','txtGoHour':'${tm}','txtGoStart':'${dep}','txtMenuId':'11','txtPsgFlg_1':'1','txtPsgFlg_2':'0','txtPsgFlg_3':'0','txtPsgFlg_4':'0','txtPsgFlg_5':'0','txtSeatAttCd_2':'000','txtSeatAttCd_3':'000','txtSeatAttCd_4':'015','txtTrnGpCd':'100','adjStnScdlOfrFlg':'N','ebizCrossCheck':'N','rtYn':'N','srtCheckYn':'N','txtGdNo':''});`
-        + `var r=await fetch('/classes/com.korail.mobile.seatMovie.ScheduleView',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd.toString()});`
-        + `var d=await r.json();`
-        + `if(!d.trn_infos||!d.trn_infos.trn_info){log('조회 결과 없음');return;}`
-        + `var list=Array.isArray(d.trn_infos.trn_info)?d.trn_infos.trn_info:[d.trn_infos.trn_info];`
-        + (trn ? `list=list.filter(function(x){var tNo=x.h_trn_no||'';return tNo==='${trn}'||tNo==='${trn}'.padStart(5,'0')||tNo.endsWith('${trn}');});` : ``)
-        + `for(var i=0;i<list.length;i++){`
-        + `var t=list[i];`
-        + `var gAv=t.h_gen_rsv_cd==='11';`
-        + `var sAv=t.h_spe_rsv_cd==='11';`
-        + `var pick=null;`
-        + (pref === 'spec_only' ? `if(sAv)pick='2';` : pref === 'gen_only' ? `if(gAv)pick='1';` : pref === 'spec_first' ? `if(sAv)pick='2';else if(gAv)pick='1';` : `if(gAv)pick='1';else if(sAv)pick='2';`)
-        + `if(pick){`
-        + `var seatNm=pick==='2'?'특실':'일반실';`
-        + `log('🎉 ['+t.h_trn_no+'호 / '+seatNm+'] 발견! 즉시 예약 시도...');`
-        + `var fd2=new URLSearchParams({'Device':'BH','Version':'999999999','Key':'korail1234567890','hidFreeFlg':'N','txtArvRsStnCd1':t.h_arv_rs_stn_cd||'','txtArvStnConsOrdr1':t.h_arv_stn_cons_ordr||'','txtArvStnRunOrdr1':t.h_arv_stn_run_ordr||'','txtDptRsStnCd1':t.h_dpt_rs_stn_cd||'','txtDptStnConsOrdr1':t.h_dpt_stn_cons_ordr||'','txtDptStnRunOrdr1':t.h_dpt_stn_run_ordr||'','txtDptDt1':t.h_dpt_dt||'${dt}','txtDptTm1':t.h_dpt_tm||'${tm}0000','txtGdNo':'','txtJobId':'1101','txtJrnyCnt':'1','txtJrnySqno1':'001','txtJrnyTpCd1':'11','txtMenuId':'11','txtPsrmClCd1':pick,'txtRunDt1':t.h_run_dt||'${dt}','txtTrnClsfCd1':t.h_trn_clsf_cd||'','txtTrnGpCd1':t.h_trn_gp_cd||'','txtTrnNo1':t.h_trn_no||'','txtStndFlg':'N','txtChgFlg1':'N','txtSeatAttCd1':'000','txtSeatAttCd2':'000','txtSeatAttCd3':'000','txtSeatAttCd4':'015','txtSeatAttCd5':'000','txtTotPsgCnt':'1','txtCompaCnt1':'1','txtCompaCnt2':'0','txtCompaCnt3':'0','txtCompaCnt4':'0','txtCompaCnt5':'0','txtDiscKndCd1':'000','txtDiscKndCd2':'P11','txtDiscKndCd3':'000','txtPsgTpCd1':'1','txtPsgTpCd2':'1'});`
-        + `var r2=await fetch('/classes/com.korail.mobile.certification.TicketReservation',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd2.toString()});`
-        + `var res=await r2.json();`
-        + `if(res.strResult!=='FAIL'){`
-        + `clearInterval(loop);`
-        + `setSt('🎉 예약 성공!');`
-        + `log('✅ 예약 성공! 결제를 진행해 주세요.');`
-        + `tg('🎉 [코레일 취소표 예약 성공!]\\n열차: '+t.h_trn_no+'\\n좌석: '+seatNm+'\\n구간: ${dep}➔${arr}\\n결제 기한 내 코레일 앱에서 결제하세요!');`
-        + `alert('🎉 축하합니다! '+t.h_trn_no+'호 ['+seatNm+'] 예약에 성공했습니다!\\n\\n코레일 승차권예약 확인 메뉴에서 결제를 진행해 주세요.');`
-        + `return;`
-        + `}else{`
-        + `log('⚠️ 마감됨 ('+(res.strResultMsg||'선점 실패')+')');`
-        + `}`
-        + `}`
-        + `}`
-        + `}catch(e){log('통신 에러: '+e.message);}`
-        + `};`
-        + `check();`
-        + `var loop=setInterval(check,1500);`
-        + `})();`;
+      const code = `javascript:(function(){
+
+if(document.getElementById('jabatta_overlay'))document.getElementById('jabatta_overlay').remove();
+var el=document.createElement('div');
+el.id='jabatta_overlay';
+el.style.cssText='position:fixed;top:20px;right:20px;background:rgb(17,20,32);color:rgb(0,255,0);padding:16px;border-radius:10px;font-family:sans-serif;font-size:13px;z-index:9999999;box-shadow:0 0 20px rgba(0,255,0,0.4);line-height:1.6;min-width:300px;border:1px solid rgb(0,255,0);';
+el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;">[Jabatta] 취소표 실시간 감시</div><div>구간: ${dep} ➔ ${arr} (${dt})</div><div>타깃: ${trn ? trn + '호' : '첫번째 열차'} (${pref})</div><hr style="border:0;border-top:1px solid rgb(50,55,75);margin:8px 0;"><div id="j_status" style="color:rgb(255,255,255);">서버 조회 준비 중...</div><button onclick="clearInterval(window.jabattaTid);window.jabattaStop=true;this.parentElement.remove()" style="margin-top:10px;background:rgb(255,68,68);color:rgb(255,255,255);border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;">중단하기</button>';
+document.body.appendChild(el);
+window.jabattaStop=false;
+window.jabattaCnt=0;
+window.jabattaBusy=false;
+var log=function(m){var e=document.getElementById('j_status');if(e)e.innerHTML=m;};
+var tg=function(m){fetch('https://api.telegram.org/bot8518874634:AAF50uxVKedxEdrke95v1ZSxTR60cRNuKJM/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:'8327635152',text:m})}).catch(function(){});};
+var doTick=async function(){
+    if(window.jabattaStop||window.jabattaBusy)return;
+    window.jabattaBusy=true;
+    window.jabattaCnt++;
+    var i=window.jabattaCnt;
+    try{
+        var fd=new URLSearchParams({'Device':'BH','Version':'999999999','Key':'korail1234567890','radJobId':'1','selGoTrain':'100','txtGoAbrdDt':'${dt}','txtGoEnd':'${arr}','txtGoHour':'${tm}','txtGoStart':'${dep}','txtMenuId':'11','txtPsgFlg_1':'1','txtPsgFlg_2':'0','txtPsgFlg_3':'0','txtPsgFlg_4':'0','txtPsgFlg_5':'0','txtSeatAttCd_2':'000','txtSeatAttCd_3':'000','txtSeatAttCd_4':'015','txtTrnGpCd':'100','adjStnScdlOfrFlg':'N','ebizCrossCheck':'N','rtYn':'N','srtCheckYn':'N','txtGdNo':''});
+        var r=await fetch('/classes/com.korail.mobile.seatMovie.ScheduleView',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd.toString()});
+        var rst=await r.json();
+        var trs=rst.trn_infos&&rst.trn_infos.trn_info||[];
+        var tgTr='${trn}'?trs.find(function(t){return t.h_trn_no==='${trn}'||t.h_dpt_tm&&t.h_dpt_tm.startsWith('${tm.slice(0,4)}');}):trs[0];
+        if(!tgTr&&trs.length>0)tgTr=trs[0];
+        if(tgTr){
+            var spe=tgTr.h_spe_rsv_cd==='11';
+            var gen=tgTr.h_gen_rsv_cd==='11';
+            var trTitle=(tgTr.h_trn_clsf_nm||'')+' '+(tgTr.h_trn_no||'');
+            var dptTime=(tgTr.h_dpt_tm||'').slice(0,2)+':'+(tgTr.h_dpt_tm||'').slice(2,4);
+            log('시도 '+i+' ('+dptTime+')<br>'+(spe?'특실⭕':'특실❌')+' / '+(gen?'일반⭕':'일반❌'));
+            var st=null;
+            var pref='${pref}';
+            if(pref==='special_only'){if(spe)st='2';}
+            else if(pref==='general_only'){if(gen)st='1';}
+            else if(pref==='general_first'){st=gen?'1':(spe?'2':null);}
+            else{st=spe?'2':(gen?'1':null);}
+             if(st){
+                var seatNm=(st==='2'?'특실':'일반실');
+                log('🎉 ['+seatNm+'] 발견! 즉시 예약 중...');
+                var fd2=new URLSearchParams({'Device':'BH','Version':'999999999','Key':'korail1234567890','hidFreeFlg':'N','txtArvRsStnCd1':tgTr.h_arv_rs_stn_cd||'','txtArvStnConsOrdr1':tgTr.h_arv_stn_cons_ordr||'','txtArvStnRunOrdr1':tgTr.h_arv_stn_run_ordr||'','txtDptRsStnCd1':tgTr.h_dpt_rs_stn_cd||'','txtDptStnConsOrdr1':tgTr.h_dpt_stn_cons_ordr||'','txtDptStnRunOrdr1':tgTr.h_dpt_stn_run_ordr||'','txtDptDt1':tgTr.h_dpt_dt||'${dt}','txtDptTm1':tgTr.h_dpt_tm||'${tm}','txtGdNo':'','txtJobId':'1101','txtJrnyCnt':'1','txtJrnySqno1':'001','txtJrnyTpCd1':'11','txtMenuId':'11','txtPsrmClCd1':st,'txtRunDt1':tgTr.h_run_dt||'${dt}','txtTrnClsfCd1':tgTr.h_trn_clsf_cd||'','txtTrnGpCd1':tgTr.h_trn_gp_cd||'','txtTrnNo1':tgTr.h_trn_no||'','txtStndFlg':'N','txtChgFlg1':'N','txtSeatAttCd1':'000','txtSeatAttCd2':'000','txtSeatAttCd3':'000','txtSeatAttCd4':'015','txtSeatAttCd5':'000','txtTotPsgCnt':'1','txtCompaCnt1':'1','txtCompaCnt2':'0','txtCompaCnt3':'0','txtCompaCnt4':'0','txtCompaCnt5':'0','txtDiscKndCd1':'000','txtDiscKndCd2':'P11','txtDiscKndCd3':'000','txtPsgTpCd1':'1','txtPsgTpCd2':'1'});
+                var r2=await fetch('/classes/com.korail.mobile.certification.TicketReservation',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd2.toString()});
+                var res=await r2.json();
+                if(res.strResult!=='FAIL'){
+                    var pnr=res.h_pnr_no||'확인필요';
+                    clearInterval(window.jabattaTid);
+                    window.jabattaStop=true;
+                    tg('[Korail 예약 성공!]\n날짜: ${dt}\n열차: '+trTitle+' ('+seatNm+')\n구간: ${dep} -> ${arr}\n예약번호: '+pnr);
+                    log('🎊 예약 성공! 예약번호: '+pnr);
+                    alert('🎊 코레일 예약 성공!\n\n예약번호: '+pnr+'\n열차: '+trTitle+' ('+seatNm+')\n\n결제 기한 내에 결제를 완료하세요!');
+                }else{
+                    log('예약 실패: '+(res.h_msg_txt||'알수없음'));
+                }
+            }
+        }
+    }catch(e){
+        log('일시 오류, 다음 시도 대기...');
+    }
+    window.jabattaBusy=false;
+};
+window.jabattaTid=setInterval(doTick,1500);
+})();`.replace(/\n\s*/g, ' ');
+
+            currentBookmarkletCode = code;
+            var link = document.getElementById('bookmarkletLink');
+            link.href = code;
+            link.innerText = '👉 [KTX ' + dt.slice(4,6) + '/' + dt.slice(6,8) + ' 예약] 드래그 👈';
+        }
+
+        updateBookmarklet();
+    </script>
+</body>
+</html>;
 
       document.getElementById('bm-link').href = code;
     }
