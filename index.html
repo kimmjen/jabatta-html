@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jabatta - 코레일 취소표 자동 예약 도우미</title>
+  <meta name="description" content="코레일 KTX/SRT 취소표 자동 예약 북마클릿 생성기">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(23, 32, 54, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.3);
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.6);
+      --input-border: rgba(255, 255, 255, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 20% 15%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 40%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    /* Auth Screen */
+    #auth-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 15, 25, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+
+    #auth-screen.unlocked {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .auth-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .auth-icon {
+      width: 60px;
+      height: 60px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 28px;
+    }
+
+    .auth-card h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .auth-card p {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .auth-input-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .auth-input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-size: 16px;
+      text-align: center;
+      letter-spacing: 2px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .auth-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+
+    .auth-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+
+    .auth-btn:hover {
+      opacity: 0.95;
+    }
+
+    .auth-btn:active {
+      transform: scale(0.98);
+    }
+
+    .auth-error {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 12px;
+      min-height: 18px;
+      transition: opacity 0.2s;
+    }
+
+    .shake {
+      animation: shakeAnim 0.4s ease;
+    }
+
+    @keyframes shakeAnim {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+
+    /* Main Container */
+    #main-content {
+      display: none;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    #main-content.visible {
+      display: block;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+      position: relative;
+    }
+
+    .top-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .logout-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #f1f5f9;
+    }
+
+    .card-title span.icon {
+      font-size: 20px;
+    }
+
+    /* Form Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    input, select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .helper-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Preset Buttons */
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .preset-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .preset-btn:hover {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+    }
+
+    /* Result / Drag Area */
+    .result-box {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(59, 130, 246, 0.08));
+      border: 2px dashed rgba(16, 185, 129, 0.3);
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .bookmarklet-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 16px 28px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: grab;
+      box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4);
+      transition: all 0.2s;
+    }
+
+    .bookmarklet-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px -5px rgba(239, 68, 68, 0.5);
+    }
+
+    .bookmarklet-btn:active {
+      cursor: grabbing;
+    }
+
+    .drag-hint {
+      margin-top: 14px;
+      color: #34d399;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .copy-btn {
+      margin-top: 12px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    /* Steps guide */
+    .guide-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .guide-step {
+      display: flex;
+      gap: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .step-body strong {
+      color: #60a5fa;
+    }
+
+    code {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #fcd34d;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: #64748b;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Password Screen -->
+  <div id="auth-screen">
+    <div class="auth-card" id="auth-card">
+      <div class="auth-icon">🔒</div>
+      <h2>접속 인증</h2>
+      <p>비공개 도구입니다.<br>부여받은 비밀번호를 입력해 주세요.</p>
+      
+      <form id="auth-form" onsubmit="handleAuth(event)">
+        <div class="auth-input-wrap">
+          <input type="password" id="auth-pwd" class="auth-input" placeholder="비밀번호 입력" autocomplete="off" autofocus>
+        </div>
+        <button type="submit" class="auth-btn">잠금 해제</button>
+        <div id="auth-error" class="auth-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main-content">
+    <header>
+      <button class="logout-btn" onclick="handleLogout()">로그아웃 🔒</button>
+      <div class="top-badge">⚡ KTX/SRT 실시간 매크로 자동화</div>
+      <h1>잡았다 (Jabatta)</h1>
+      <p class="subtitle">별도 프로그램 설치 없이 브라우저에서 1초 만에 등록하는<br>초경량 코레일 취소표 자동 예약 북마클릿</p>
+    </header>
+
+    <!-- Quick Presets -->
+    <div class="presets">
+      <button class="preset-btn" onclick="applyPreset('0928_daegu')">🌕 9월 28일 서울 ➔ 동대구 (KTX 241)</button>
+      <button class="preset-btn" onclick="applyPreset('0925_daegu')">🌕 9월 25일 서울 ➔ 동대구 (KTX 059)</button>
+      <button class="preset-btn" onclick="applyPreset('today_busan')">🚄 오늘 서울 ➔ 부산</button>
+    </div>
+
+    <!-- Setting Card -->
+    <div class="card">
+      <div class="card-title"><span class="icon">⚙️</span> 예매 구간 및 열차 설정</div>
+      
+      <div class="grid-2">
+        <div class="form-group">
+          <label>출발역</label>
+          <input type="text" id="depStn" value="서울" placeholder="예: 서울, 용산, 수서">
+        </div>
+        <div class="form-group">
+          <label>도착역</label>
+          <input type="text" id="arrStn" value="동대구" placeholder="예: 동대구, 부산, 광주송정">
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="form-group">
+          <label>출발 날짜 (YYYYMMDD)</label>
+          <input type="text" id="depDate" value="20260928" placeholder="20260928">
+        </div>
+        <div class="form-group">
+          <label>검색 시작 시간 (HH)</label>
+          <input type="text" id="depHour" value="18" placeholder="18">
+        </div>
+        <div class="form-group">
+          <label>지정 열차 번호 (옵션)</label>
+          <input type="text" id="trnNo" value="00241" placeholder="예: 00241 (공백 시 전체)">
+          <span class="helper-text">0을 포함한 5자리 (예: 00241)</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>좌석 탐색 우선순위</label>
+        <select id="seatPref">
+          <option value="gen_first" selected>일반실 우선 (없으면 특실)</option>
+          <option value="spec_first">특실 우선 (없으면 일반실)</option>
+          <option value="gen_only">일반실만</option>
+          <option value="spec_only">특실만</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Notification Card -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🔔</span> 텔레그램 알림 설정 (선택 사항)</div>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 14px;">
+        예약 성공 시 텔레그램으로 즉시 알림을 발송합니다. 비워두셔도 화면 알림(소리/팝업)은 정상 작동합니다.
+      </p>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>텔레그램 봇 토큰 (Bot Token)</label>
+          <input type="text" id="tgToken" placeholder="예: 7143123456:AAFlX...">
+        </div>
+        <div class="form-group">
+          <label>텔레그램 채팅 ID (Chat ID)</label>
+          <input type="text" id="tgChat" placeholder="예: 6793123456">
+        </div>
+      </div>
+    </div>
+
+    <!-- Result / Bookmarklet Card -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🚀</span> 생성된 북마클릿 등록하기</div>
+      
+      <div class="result-box">
+        <a id="bm-link" class="bookmarklet-btn" href="javascript:void(0);">
+          <span>📌</span>
+          <span id="bm-title">코레일 취소표 예약 (잡았다)</span>
+        </a>
+        <div class="drag-hint">⬆️ 위 빨간 버튼을 마우스로 끌어 크롬 북마크바에 놓으세요!</div>
+        <button class="copy-btn" onclick="copyBookmarkletCode()">코드 직접 복사하기</button>
+      </div>
+    </div>
+
+    <!-- Instructions Guide -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📖</span> 사용 방법 (초간단 3단계)</div>
+      <div class="guide-steps">
+        <div class="guide-step">
+          <div class="step-num">1</div>
+          <div class="step-body">위의 <strong>빨간 버튼을 크롬 상단의 [북마크 바]</strong>로 드래그해서 저장합니다. (북마크바가 안 보이면 <code>Ctrl+Shift+B</code> 또는 <code>Cmd+Shift+B</code>)</div>
+        </div>
+        <div class="guide-step">
+          <div class="step-num">2</div>
+          <div class="step-body">새 탭에서 <code>https://www.korail.com</code> 에 접속하여 <strong>코레일 계정으로 로그인</strong>합니다.</div>
+        </div>
+        <div class="guide-step">
+          <div class="step-num">3</div>
+          <div class="step-body">로그인된 코레일 화면에서 방금 저장한 <strong>북마크를 1번 클릭</strong>합니다. 화면 우측 하단에 초록색 실행 패널이 뜨며 1.5초마다 취소표를 자동 탐색 및 즉시 예약합니다!</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Jabatta Assistant • 안전한 로컬 세션 실행 (서버 전송 없음)
+    </footer>
+  </div>
+
+  <script>
+    // SHA-256 Hash of Password: "2026"
+    const AUTH_HASH = "158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab";
+
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function handleAuth(e) {
+      if (e) e.preventDefault();
+      const pwdInput = document.getElementById('auth-pwd');
+      const errEl = document.getElementById('auth-error');
+      const cardEl = document.getElementById('auth-card');
+      const val = pwdInput.value.trim();
+
+      if (!val) {
+        errEl.innerText = "비밀번호를 입력하세요.";
+        return;
+      }
+
+      const inputHash = await sha256(val);
+      if (inputHash === AUTH_HASH) {
+        sessionStorage.setItem('jabatta_auth', 'unlocked');
+        unlockUI();
+      } else {
+        errEl.innerText = "비밀번호가 올바르지 않습니다.";
+        cardEl.classList.add('shake');
+        setTimeout(() => cardEl.classList.remove('shake'), 400);
+        pwdInput.select();
+      }
+    }
+
+    function unlockUI() {
+      document.getElementById('auth-screen').classList.add('unlocked');
+      document.getElementById('main-content').classList.add('visible');
+      updateBookmarklet();
+    }
+
+    function handleLogout() {
+      sessionStorage.removeItem('jabatta_auth');
+      window.location.reload();
+    }
+
+    // Auto-login if previously unlocked in this session
+    window.addEventListener('DOMContentLoaded', () => {
+      if (sessionStorage.getItem('jabatta_auth') === 'unlocked') {
+        unlockUI();
+      }
+      updateBookmarklet();
+    });
+
+    // Preset handler
+    function applyPreset(type) {
+      if (type === '0928_daegu') {
+        document.getElementById('depStn').value = '서울';
+        document.getElementById('arrStn').value = '동대구';
+        document.getElementById('depDate').value = '20260928';
+        document.getElementById('depHour').value = '18';
+        document.getElementById('trnNo').value = '00241';
+        document.getElementById('seatPref').value = 'gen_first';
+      } else if (type === '0925_daegu') {
+        document.getElementById('depStn').value = '서울';
+        document.getElementById('arrStn').value = '동대구';
+        document.getElementById('depDate').value = '20260925';
+        document.getElementById('depHour').value = '18';
+        document.getElementById('trnNo').value = '00059';
+        document.getElementById('seatPref').value = 'gen_first';
+      } else if (type === 'today_busan') {
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        document.getElementById('depStn').value = '서울';
+        document.getElementById('arrStn').value = '부산';
+        document.getElementById('depDate').value = today;
+        document.getElementById('depHour').value = '12';
+        document.getElementById('trnNo').value = '';
+        document.getElementById('seatPref').value = 'gen_first';
+      }
+      updateBookmarklet();
+    }
+
+    // Dynamic Bookmarklet Builder
+    function updateBookmarklet() {
+      const dep = document.getElementById('depStn').value.trim() || '서울';
+      const arr = document.getElementById('arrStn').value.trim() || '동대구';
+      const dt = document.getElementById('depDate').value.trim() || '20260928';
+      const tm = document.getElementById('depHour').value.trim().padStart(2, '0') || '18';
+      const trn = document.getElementById('trnNo').value.trim();
+      const pref = document.getElementById('seatPref').value;
+      const tgTok = document.getElementById('tgToken').value.trim();
+      const tgChat = document.getElementById('tgChat').value.trim();
+
+      const btnTitle = `잡았다 (${dep}➔${arr}${trn ? ' ' + trn : ''})`;
+      document.getElementById('bm-title').innerText = btnTitle;
+
+      // Build safe bookmarklet JS
+      const code = `javascript:(function(){`
+        + `if(window.__jabatta_active){alert('이미 예약 프로그램이 실행 중입니다!');return;}`
+        + `window.__jabatta_active=true;`
+        + `if(location.hostname!=='www.korail.com'){alert('반드시 https://www.korail.com 에 로그인한 뒤 실행해 주세요!');window.__jabatta_active=false;return;}`
+        + `var panel=document.createElement('div');`
+        + `panel.id='jb-panel';`
+        + `panel.style.cssText='position:fixed;bottom:24px;right:24px;width:340px;background:#0f172a;color:#f8fafc;padding:18px;border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15);font-family:sans-serif;font-size:13px;z-index:999999;line-height:1.5;';`
+        + `panel.innerHTML='<div style="font-weight:700;font-size:14px;color:#38bdf8;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;"><span>🚄 잡았다 (${dep}➔${arr})</span><button id="jb-close" style="background:transparent;border:none;color:#94a3b8;font-size:16px;cursor:pointer;">✕</button></div><div id="jb-status" style="color:#a7f3d0;font-weight:600;margin-bottom:8px;">준비 중...</div><div id="jb-log" style="height:100px;overflow-y:auto;background:rgba(0,0,0,0.4);border-radius:8px;padding:8px;font-size:11px;color:#cbd5e1;font-family:monospace;"></div>';`
+        + `document.body.appendChild(panel);`
+        + `var log=function(m){var el=document.getElementById('jb-log');if(el){var t=new Date().toTimeString().split(' ')[0];el.innerHTML+='['+t+'] '+m+'<br>';el.scrollTop=el.scrollHeight;}};`
+        + `var setSt=function(m){var el=document.getElementById('jb-status');if(el)el.innerHTML=m;};`
+        + `var tg=function(m){`
+        + (tgTok && tgChat ? `fetch('https://api.telegram.org/bot${tgTok}/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:'${tgChat}',text:m})}).catch(function(){});` : ``)
+        + `};`
+        + `var stop=function(){clearInterval(loop);window.__jabatta_active=false;panel.remove();};`
+        + `document.getElementById('jb-close').onclick=stop;`
+        + `var cnt=0;`
+        + `var check=async function(){`
+        + `cnt++;setSt('탐색 중 ('+cnt+'회차) 🔍');`
+        + `try{`
+        + `var fd=new URLSearchParams({'Device':'BH','Version':'999999999','Key':'korail1234567890','radJobId':'1','selGoTrain':'100','txtGoAbrdDt':'${dt}','txtGoEnd':'${arr}','txtGoHour':'${tm}','txtGoStart':'${dep}','txtMenuId':'11','txtPsgFlg_1':'1','txtPsgFlg_2':'0','txtPsgFlg_3':'0','txtPsgFlg_4':'0','txtPsgFlg_5':'0','txtSeatAttCd_2':'000','txtSeatAttCd_3':'000','txtSeatAttCd_4':'015','txtTrnGpCd':'100','adjStnScdlOfrFlg':'N','ebizCrossCheck':'N','rtYn':'N','srtCheckYn':'N','txtGdNo':''});`
+        + `var r=await fetch('/classes/com.korail.mobile.seatMovie.ScheduleView',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd.toString()});`
+        + `var d=await r.json();`
+        + `if(!d.trn_infos||!d.trn_infos.trn_info){log('조회 결과 없음');return;}`
+        + `var list=Array.isArray(d.trn_infos.trn_info)?d.trn_infos.trn_info:[d.trn_infos.trn_info];`
+        + (trn ? `list=list.filter(function(x){return x.h_trn_no==='${trn}';});` : ``)
+        + `for(var i=0;i<list.length;i++){`
+        + `var t=list[i];`
+        + `var gAv=t.h_gen_rsv_cd==='11';`
+        + `var sAv=t.h_spe_rsv_cd==='11';`
+        + `var pick=null;`
+        + (pref === 'spec_only' ? `if(sAv)pick='2';` : pref === 'gen_only' ? `if(gAv)pick='1';` : pref === 'spec_first' ? `if(sAv)pick='2';else if(gAv)pick='1';` : `if(gAv)pick='1';else if(sAv)pick='2';`)
+        + `if(pick){`
+        + `var seatNm=pick==='2'?'특실':'일반실';`
+        + `log('🎉 ['+t.h_trn_no+'호 / '+seatNm+'] 발견! 즉시 예약 시도...');`
+        + `var fd2=new URLSearchParams({'Device':'BH','Version':'999999999','Key':'korail1234567890','hidFreeFlg':'N','txtArvRsStnCd1':t.h_arv_rs_stn_cd||'','txtArvStnConsOrdr1':t.h_arv_stn_cons_ordr||'','txtArvStnRunOrdr1':t.h_arv_stn_run_ordr||'','txtDptRsStnCd1':t.h_dpt_rs_stn_cd||'','txtDptStnConsOrdr1':t.h_dpt_stn_cons_ordr||'','txtDptStnRunOrdr1':t.h_dpt_stn_run_ordr||'','txtDptDt1':t.h_dpt_dt||'${dt}','txtDptTm1':t.h_dpt_tm||'${tm}0000','txtGdNo':'','txtJobId':'1101','txtJrnyCnt':'1','txtJrnySqno1':'001','txtJrnyTpCd1':'11','txtMenuId':'11','txtPsrmClCd1':pick,'txtRunDt1':t.h_run_dt||'${dt}','txtTrnClsfCd1':t.h_trn_clsf_cd||'','txtTrnGpCd1':t.h_trn_gp_cd||'','txtTrnNo1':t.h_trn_no||'','txtStndFlg':'N','txtChgFlg1':'N','txtSeatAttCd1':'000','txtSeatAttCd2':'000','txtSeatAttCd3':'000','txtSeatAttCd4':'015','txtSeatAttCd5':'000','txtTotPsgCnt':'1','txtCompaCnt1':'1','txtCompaCnt2':'0','txtCompaCnt3':'0','txtCompaCnt4':'0','txtCompaCnt5':'0','txtDiscKndCd1':'000','txtDiscKndCd2':'P11','txtDiscKndCd3':'000','txtPsgTpCd1':'1','txtPsgTpCd2':'1'});`
+        + `var r2=await fetch('/classes/com.korail.mobile.certification.TicketReservation',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd2.toString()});`
+        + `var res=await r2.json();`
+        + `if(res.strResult!=='FAIL'){`
+        + `clearInterval(loop);`
+        + `setSt('🎉 예약 성공!');`
+        + `log('✅ 예약 성공! 결제를 진행해 주세요.');`
+        + `tg('🎉 [코레일 취소표 예약 성공!]\\n열차: '+t.h_trn_no+'\\n좌석: '+seatNm+'\\n구간: ${dep}➔${arr}\\n결제 기한 내 코레일 앱에서 결제하세요!');`
+        + `alert('🎉 축하합니다! '+t.h_trn_no+'호 ['+seatNm+'] 예약에 성공했습니다!\\n\\n코레일 승차권예약 확인 메뉴에서 결제를 진행해 주세요.');`
+        + `return;`
+        + `}else{`
+        + `log('⚠️ 마감됨 ('+(res.strResultMsg||'선점 실패')+')');`
+        + `}`
+        + `}`
+        + `}`
+        + `}catch(e){log('통신 에러: '+e.message);}`
+        + `};`
+        + `check();`
+        + `var loop=setInterval(check,1500);`
+        + `})();`;
+
+      document.getElementById('bm-link').href = code;
+    }
+
+    function copyBookmarkletCode() {
+      const href = document.getElementById('bm-link').href;
+      navigator.clipboard.writeText(href).then(() => {
+        alert('북마클릿 코드가 클립보드에 복사되었습니다! 북마크 URL 란에 붙여넣으실 수 있습니다.');
+      }).catch(() => {
+        prompt('아래 코드를 복사하세요:', href);
+      });
+    }
+
+    // Attach real-time input listeners
+    ['depStn', 'arrStn', 'depDate', 'depHour', 'trnNo', 'seatPref', 'tgToken', 'tgChat'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateBookmarklet);
+      document.getElementById(id).addEventListener('change', updateBookmarklet);
+    });
+  </script>
+</body>
+</html>
