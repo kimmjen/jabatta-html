@@ -781,7 +781,7 @@ if(document.getElementById("jabatta_overlay"))document.getElementById("jabatta_o
 var el=document.createElement("div");
 el.id="jabatta_overlay";
 el.style.cssText="position:fixed;top:20px;right:20px;background:rgb(17,20,32);color:rgb(0,255,0);padding:16px;border-radius:10px;font-family:sans-serif;font-size:13px;z-index:9999999;box-shadow:0 0 20px rgba(0,255,0,0.4);line-height:1.6;min-width:300px;border:1px solid rgb(0,255,0);";
-el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;">[Jabatta] 취소표 실시간 감시</div><div>구간: ${dep} ➔ ${arr} (${dt})</div><div>타깃: ${trn ? trn + "호" : "첫번째 열차"} (<span style="color:#fcd34d;">${pref.includes("spec_first") || pref.includes("special_first") ? "특실 우선" : (pref.includes("gen_first") || pref.includes("general_first") ? "일반실 우선" : (pref.includes("spec_only") || pref.includes("special_only") ? "특실만" : "일반실만"))}</span>)</div><hr style="border:0;border-top:1px solid rgb(50,55,75);margin:8px 0;"><div id="j_status" style="color:rgb(255,255,255);">서버 조회 준비 중...</div><button onclick="window.__jabatta_stop=true;if(window.__jabatta_tid)clearTimeout(window.__jabatta_tid);this.parentElement.remove()" style="margin-top:10px;background:rgb(255,68,68);color:rgb(255,255,255);border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;">중단하기</button>';
+el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;">[Jabatta] 취소표 실시간 감시</div><div>구간: ${dep} ➔ ${arr} (${dt})</div><div>타깃: ${trn ? trn + "호" : "첫번째 열차"} (<span style="color:rgb(252,211,77);">${pref.includes("spec_first") || pref.includes("special_first") ? "특실 우선" : (pref.includes("gen_first") || pref.includes("general_first") ? "일반실 우선" : (pref.includes("spec_only") || pref.includes("special_only") ? "특실만" : "일반실만"))}</span>)</div><hr style="border:0;border-top:1px solid rgb(50,55,75);margin:8px 0;"><div id="j_status" style="color:rgb(255,255,255);">서버 조회 준비 중...</div><button onclick="window.__jabatta_stop=true;if(window.__jabatta_tid)clearTimeout(window.__jabatta_tid);this.parentElement.remove()" style="margin-top:10px;background:rgb(255,68,68);color:rgb(255,255,255);border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;">중단하기</button>';
 document.body.appendChild(el);
 
 window.__jabatta_stop = false;
@@ -923,15 +923,17 @@ var doTick = async function(){
 scheduleNext(100);
 })();`;
 
-      document.getElementById('bm-link').href = code;
+      // a.href setter/getter는 URL로 파싱해 #·한글을 망가뜨리므로 setAttribute + 원본 보관
+      window.__jabatta_bm_code = code;
+      document.getElementById('bm-link').setAttribute('href', code);
     }
 
     function copyBookmarkletCode() {
-      const href = document.getElementById('bm-link').href;
-      navigator.clipboard.writeText(href).then(() => {
+      const raw = window.__jabatta_bm_code || document.getElementById('bm-link').getAttribute('href') || '';
+      navigator.clipboard.writeText(raw).then(() => {
         alert('북마클릿 코드가 클립보드에 복사되었습니다! 북마크 URL 란에 붙여넣으실 수 있습니다.');
       }).catch(() => {
-        prompt('아래 코드를 복사하세요:', href);
+        prompt('아래 코드를 복사하세요:', raw);
       });
     }
 
