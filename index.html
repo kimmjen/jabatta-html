@@ -525,10 +525,10 @@
       <div class="form-group">
         <label>좌석 탐색 우선순위</label>
         <select id="seatPref">
-          <option value="spec_first" selected>특실 우선 (일반실도 가능)</option>
-          <option value="gen_first">일반실 우선 (특실도 가능)</option>
-          <option value="spec_only">특실만</option>
+          <option value="gen_first" selected>일반실 우선 (특실도 가능)</option>
+          <option value="spec_first">특실 우선 (일반실도 가능)</option>
           <option value="gen_only">일반실만</option>
+          <option value="spec_only">특실만</option>
         </select>
       </div>
     </div>
@@ -717,14 +717,14 @@
         document.getElementById('depDate').value = '20260928';
         document.getElementById('depHour').value = '0700';
         document.getElementById('trnNo').value = '608';
-        document.getElementById('seatPref').value = 'spec_first';
+        document.getElementById('seatPref').value = 'gen_first';
       } else if (type === 'test_1012') {
         document.getElementById('depStn').value = '광주송정';
         document.getElementById('arrStn').value = '동탄';
         document.getElementById('depDate').value = '20261012';
         document.getElementById('depHour').value = '0700';
         document.getElementById('trnNo').value = '608';
-        document.getElementById('seatPref').value = 'spec_first';
+        document.getElementById('seatPref').value = 'gen_first';
       }
       updateBookmarklet();
     }
