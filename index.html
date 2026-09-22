@@ -751,7 +751,7 @@ if(document.getElementById('jabatta_overlay'))document.getElementById('jabatta_o
 var el=document.createElement('div');
 el.id='jabatta_overlay';
 el.style.cssText='position:fixed;top:20px;right:20px;background:rgb(17,20,32);color:rgb(0,255,0);padding:16px;border-radius:10px;font-family:sans-serif;font-size:13px;z-index:9999999;box-shadow:0 0 20px rgba(0,255,0,0.4);line-height:1.6;min-width:300px;border:1px solid rgb(0,255,0);';
-el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;">[Jabatta] 취소표 실시간 감시</div><div>구간: ${dep} ➔ ${arr} (${dt})</div><div>타깃: ${trn ? trn + '호' : '첫번째 열차'} (${pref})</div><hr style="border:0;border-top:1px solid rgb(50,55,75);margin:8px 0;"><div id="j_status" style="color:rgb(255,255,255);">서버 조회 준비 중...</div><button onclick="clearInterval(window.jabattaTid);window.jabattaStop=true;this.parentElement.remove()" style="margin-top:10px;background:rgb(255,68,68);color:rgb(255,255,255);border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;">중단하기</button>';
+el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;">[Jabatta] 취소표 실시간 감시</div><div>구간: ${dep} ➔ ${arr} (${dt})</div><div>타깃: ${trn ? trn + '호' : '첫번째 열차'} (<span style='color:#fcd34d;'>${pref.includes('spec_first') || pref.includes('special_first') ? '특실 우선' : (pref.includes('gen_first') || pref.includes('general_first') ? '일반실 우선' : (pref.includes('spec_only') || pref.includes('special_only') ? '특실만' : '일반실만'))}</span>)</div><hr style="border:0;border-top:1px solid rgb(50,55,75);margin:8px 0;"><div id="j_status" style="color:rgb(255,255,255);">서버 조회 준비 중...</div><button onclick="clearInterval(window.jabattaTid);window.jabattaStop=true;this.parentElement.remove()" style="margin-top:10px;background:rgb(255,68,68);color:rgb(255,255,255);border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;">중단하기</button>';
 document.body.appendChild(el);
 window.jabattaStop=false;
 window.jabattaCnt=0;
@@ -778,10 +778,18 @@ var doTick=async function(){
             log('시도 '+i+' ('+dptTime+')<br>'+(spe?'특실⭕':'특실❌')+' / '+(gen?'일반⭕':'일반❌'));
             var st=null;
             var pref='${pref}';
-            if(pref==='special_only'){if(spe)st='2';}
-            else if(pref==='general_only'){if(gen)st='1';}
-            else if(pref==='general_first'){st=gen?'1':(spe?'2':null);}
-            else{st=spe?'2':(gen?'1':null);}
+            if(pref==='spec_only'||pref==='special_only'){
+                if(spe)st='2';
+            }else if(pref==='gen_only'||pref==='general_only'){
+                if(gen)st='1';
+            }else if(pref==='gen_first'||pref==='general_first'){
+                if(gen)st='1';
+                else if(spe)st='2';
+            }else{
+                // 특실 우선 (spec_first / special_first 또는 기본값)
+                if(spe)st='2';
+                else if(gen)st='1';
+            }
              if(st){
                 var seatNm=(st==='2'?'특실':'일반실');
                 log('🎉 ['+seatNm+'] 발견! 즉시 예약 중...');
