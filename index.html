@@ -482,6 +482,7 @@
       <div class="top-badge">⚡ KTX/SRT 실시간 매크로 자동화</div>
       <h1>잡았다 (Jabatta)</h1>
       <p class="subtitle">별도 프로그램 설치 없이 브라우저에서 1초 만에 등록하는<br>초경량 코레일 취소표 자동 예약 북마클릿</p>
+      <div style="margin-top: 10px; font-size: 12px; color: #34d399;">💾 입력하신 텔레그램 토큰 및 예매 설정은 이 브라우저에 자동 저장됩니다.</div>
     </header>
 
     <!-- Quick Presets -->
@@ -648,9 +649,49 @@
       }
     }
 
+    const STORAGE_KEY = 'jabatta_user_config';
+
+    function loadSavedConfig() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const cfg = JSON.parse(saved);
+          if (cfg.depStn !== undefined) document.getElementById('depStn').value = cfg.depStn;
+          if (cfg.arrStn !== undefined) document.getElementById('arrStn').value = cfg.arrStn;
+          if (cfg.depDate !== undefined) document.getElementById('depDate').value = cfg.depDate;
+          if (cfg.depHour !== undefined) document.getElementById('depHour').value = cfg.depHour;
+          if (cfg.trnNo !== undefined) document.getElementById('trnNo').value = cfg.trnNo;
+          if (cfg.seatPref !== undefined) document.getElementById('seatPref').value = cfg.seatPref;
+          if (cfg.tgToken !== undefined) document.getElementById('tgToken').value = cfg.tgToken;
+          if (cfg.tgChat !== undefined) document.getElementById('tgChat').value = cfg.tgChat;
+        }
+      } catch (e) {
+        console.warn('Failed to load saved config:', e);
+      }
+    }
+
+    function saveCurrentConfig() {
+      try {
+        const cfg = {
+          depStn: document.getElementById('depStn').value.trim(),
+          arrStn: document.getElementById('arrStn').value.trim(),
+          depDate: document.getElementById('depDate').value.trim(),
+          depHour: document.getElementById('depHour').value.trim(),
+          trnNo: document.getElementById('trnNo').value.trim(),
+          seatPref: document.getElementById('seatPref').value,
+          tgToken: document.getElementById('tgToken').value.trim(),
+          tgChat: document.getElementById('tgChat').value.trim()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+      } catch (e) {
+        console.warn('Failed to save config:', e);
+      }
+    }
+
     function unlockUI() {
       document.getElementById('auth-screen').classList.add('unlocked');
       document.getElementById('main-content').classList.add('visible');
+      loadSavedConfig();
       updateBookmarklet();
     }
 
@@ -661,6 +702,7 @@
 
     // Auto-login if previously unlocked in this session
     window.addEventListener('DOMContentLoaded', () => {
+      loadSavedConfig();
       if (sessionStorage.getItem('jabatta_auth') === 'unlocked') {
         unlockUI();
       }
@@ -689,6 +731,7 @@
 
     // Dynamic Bookmarklet Builder
     function updateBookmarklet() {
+      saveCurrentConfig();
       const dep = document.getElementById('depStn').value.trim() || '광주송정';
       const arr = document.getElementById('arrStn').value.trim() || '동탄';
       const dt = document.getElementById('depDate').value.trim() || '20260928';
