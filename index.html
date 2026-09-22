@@ -821,6 +821,7 @@ var doTick = async function(){
     try{
         var r = await fetch("/classes/com.korail.mobile.seatMovie.ScheduleView", {
             method: "POST",
+            cache: "no-store",
             headers: {"Content-Type":"application/x-www-form-urlencoded"},
             body: queryBody,
             signal: controller ? controller.signal : undefined
@@ -878,6 +879,7 @@ var doTick = async function(){
 
                 var r2 = await fetch("/classes/com.korail.mobile.certification.TicketReservation", {
                     method:"POST",
+                    cache:"no-store",
                     headers:{"Content-Type":"application/x-www-form-urlencoded"},
                     body:rsvBody
                 });
