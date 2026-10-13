@@ -536,6 +536,17 @@
           <option value="spec_only">특실만</option>
         </select>
       </div>
+
+      <div class="form-group">
+        <label>조회 간격</label>
+        <select id="pollRate">
+          <option value="1.6-1.6">1.6초 고정 (빠름 · 제재 위험 큼)</option>
+          <option value="3-5">3~5초 무작위</option>
+          <option value="5-10" selected>5~10초 무작위 (권장)</option>
+          <option value="10-20">10~20초 무작위 (가장 안전)</option>
+        </select>
+        <span class="helper-text">간격이 짧을수록 취소표를 빨리 잡지만 코레일의 접속 제한을 받을 가능성이 커집니다.</span>
+      </div>
     </div>
 
     <!-- Notification Card -->
@@ -694,6 +705,7 @@
           if (cfg.depHour !== undefined) document.getElementById('depHour').value = cfg.depHour;
           if (cfg.trnNo !== undefined) document.getElementById('trnNo').value = cfg.trnNo;
           if (cfg.seatPref !== undefined) document.getElementById('seatPref').value = cfg.seatPref;
+          if (cfg.pollRate !== undefined) document.getElementById('pollRate').value = cfg.pollRate;
           if (cfg.tgToken !== undefined) document.getElementById('tgToken').value = cfg.tgToken;
           if (cfg.tgChat !== undefined) document.getElementById('tgChat').value = cfg.tgChat;
         }
@@ -711,6 +723,7 @@
           depHour: document.getElementById('depHour').value.trim(),
           trnNo: document.getElementById('trnNo').value.trim(),
           seatPref: document.getElementById('seatPref').value,
+          pollRate: document.getElementById('pollRate').value,
           tgToken: document.getElementById('tgToken').value.trim(),
           tgChat: document.getElementById('tgChat').value.trim()
         };
@@ -776,6 +789,7 @@
       const tm = tmRaw.padEnd(4, '0').slice(0, 4) + '00'; // HHMM -> HHMMSS (코레일 API 요구 포맷)
       const trn = document.getElementById('trnNo').value.trim();
       const pref = document.getElementById('seatPref').value;
+      const [pMin, pMax] = (document.getElementById('pollRate').value || '5-10').split('-').map(s => Math.round(parseFloat(s) * 1000));
       const tgTok = document.getElementById('tgToken').value.trim();
       const tgChat = document.getElementById('tgChat').value.trim();
 
@@ -827,9 +841,10 @@ var keepAlive = function(){
     }catch(e){}
 };
 
+var pMin=${pMin},pMax=${pMax};
 var scheduleNext = function(delay){
     if(!window.__jabatta_stop){
-        window.__jabatta_tid = setTimeout(doTick, delay || 1600);
+        window.__jabatta_tid = setTimeout(doTick, delay || pMin + Math.random() * (pMax - pMin));
     }
 };
 
@@ -944,7 +959,7 @@ var doTick = async function(){
         log("통신 지연 재시도 중...");
     }
     
-    scheduleNext(1600);
+    scheduleNext();
 };
 
 scheduleNext(100);
@@ -965,7 +980,7 @@ scheduleNext(100);
     }
 
     // Attach real-time input listeners
-    ['depStn', 'arrStn', 'depDate', 'depHour', 'trnNo', 'seatPref', 'tgToken', 'tgChat'].forEach(id => {
+    ['depStn', 'arrStn', 'depDate', 'depHour', 'trnNo', 'seatPref', 'pollRate', 'tgToken', 'tgChat'].forEach(id => {
       document.getElementById(id).addEventListener('input', updateBookmarklet);
       document.getElementById(id).addEventListener('change', updateBookmarklet);
     });
