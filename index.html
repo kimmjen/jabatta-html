@@ -807,7 +807,7 @@ if("${tgTok}" && "${tgChat}"){
     fetch("https://api.telegram.org/bot${tgTok}/sendMessage", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({chat_id:"${tgChat}", text:"✅ [Jabatta] 감시 시작\n구간: ${dep} ➔ ${arr} (${dt})"})
+        body:JSON.stringify({chat_id:"${tgChat}", text:"✅ [Jabatta] 감시 시작\\n구간: ${dep} ➔ ${arr} (${dt})"})
     }).then(function(r){ if(!r.ok) log("⚠️ 텔레그램 테스트 실패 — 토큰/chat id 확인"); })
       .catch(function(){ log("⚠️ 텔레그램 테스트 실패 — 네트워크 확인"); });
 }
@@ -915,7 +915,7 @@ var doTick = async function(){
                     window.__jabatta_stop = true;
                     if(window.__jabatta_tid) clearTimeout(window.__jabatta_tid);
 
-                    var tgMsg = "🎉 [코레일 취소표 예약 성공!]\n열차: " + trTitle + " (" + seatNm + ")\n구간: ${dep} ➔ ${arr}\n출발: " + dptTime + "\n예약번호: " + pnr + "\n결제 기한 내 코레일 앱에서 결제하세요!";
+                    var tgMsg = "🎉 [코레일 취소표 예약 성공!]\\n열차: " + trTitle + " (" + seatNm + ")\\n구간: ${dep} ➔ ${arr}\\n출발: " + dptTime + "\\n예약번호: " + pnr + "\\n결제 기한 내 코레일 앱에서 결제하세요!";
                     if("${tgTok}" && "${tgChat}"){
                         fetch("https://api.telegram.org/bot${tgTok}/sendMessage", {
                             method:"POST",
@@ -925,7 +925,7 @@ var doTick = async function(){
                     }
 
                     log("🎊 예약 성공! 예약번호: " + pnr);
-                    alert("🎊 코레일 예약 성공!\n\n예약번호: " + pnr + "\n열차: " + trTitle + " (" + seatNm + ")\n\n결제 기한 내에 결제를 완료하세요!");
+                    alert("🎊 코레일 예약 성공!\\n\\n예약번호: " + pnr + "\\n열차: " + trTitle + " (" + seatNm + ")\\n\\n결제 기한 내에 결제를 완료하세요!");
                     return;
                 } else {
                     log("예약 실패: " + (res.h_msg_txt || "순간 매진"));
@@ -934,7 +934,7 @@ var doTick = async function(){
         } else {
             var isSrt = ("${dep}".indexOf("동탄") >= 0 || "${dep}".indexOf("수서") >= 0 || "${arr}".indexOf("동탄") >= 0 || "${arr}".indexOf("수서") >= 0);
             var err = (rst && (rst.h_msg_txt || rst.errMsg)) || (isSrt ? "⚠️ 동탄/수서는 SRT 전용 역입니다 (코레일 예매 불가)" : (list.length === 0 ? "조회된 열차 없음 (구간/일자 확인)" : "지정 열차(" + "${trn}" + "호) 없음"));
-            log("시도 " + i + "<br><span style=\"color:rgb(252,211,77);font-size:12px;\">" + err + "</span>");
+            log("시도 " + i + "<br><span style=\\"color:rgb(252,211,77);font-size:12px;\\">" + err + "</span>");
         }
         rst = null;
         list = null;
