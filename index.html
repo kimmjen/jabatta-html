@@ -547,6 +547,15 @@
         </select>
         <span class="helper-text">간격이 짧을수록 취소표를 빨리 잡지만 코레일의 접속 제한을 받을 가능성이 커집니다.</span>
       </div>
+
+      <div class="form-group">
+        <label>휴식</label>
+        <select id="restMode">
+          <option value="off" selected>사용 안 함</option>
+          <option value="on">사용 (100~200회마다 1~3분 휴식)</option>
+        </select>
+        <span class="helper-text">휴식 중에 나온 취소표는 놓칠 수 있습니다.</span>
+      </div>
     </div>
 
     <!-- Notification Card -->
@@ -706,6 +715,7 @@
           if (cfg.trnNo !== undefined) document.getElementById('trnNo').value = cfg.trnNo;
           if (cfg.seatPref !== undefined) document.getElementById('seatPref').value = cfg.seatPref;
           if (cfg.pollRate !== undefined) document.getElementById('pollRate').value = cfg.pollRate;
+          if (cfg.restMode !== undefined) document.getElementById('restMode').value = cfg.restMode;
           if (cfg.tgToken !== undefined) document.getElementById('tgToken').value = cfg.tgToken;
           if (cfg.tgChat !== undefined) document.getElementById('tgChat').value = cfg.tgChat;
         }
@@ -724,6 +734,7 @@
           trnNo: document.getElementById('trnNo').value.trim(),
           seatPref: document.getElementById('seatPref').value,
           pollRate: document.getElementById('pollRate').value,
+          restMode: document.getElementById('restMode').value,
           tgToken: document.getElementById('tgToken').value.trim(),
           tgChat: document.getElementById('tgChat').value.trim()
         };
@@ -790,6 +801,7 @@
       const trn = document.getElementById('trnNo').value.trim();
       const pref = document.getElementById('seatPref').value;
       const [pMin, pMax] = (document.getElementById('pollRate').value || '5-10').split('-').map(s => Math.round(parseFloat(s) * 1000));
+      const restOn = document.getElementById('restMode').value === 'on';
       const tgTok = document.getElementById('tgToken').value.trim();
       const tgChat = document.getElementById('tgChat').value.trim();
 
@@ -842,6 +854,7 @@ var keepAlive = function(){
 };
 
 var pMin=${pMin},pMax=${pMax};
+var nextRest=${restOn} ? 100 + Math.floor(Math.random() * 101) : Infinity;
 var scheduleNext = function(delay){
     if(!window.__jabatta_stop){
         window.__jabatta_tid = setTimeout(doTick, delay || pMin + Math.random() * (pMax - pMin));
@@ -959,7 +972,13 @@ var doTick = async function(){
         log("통신 지연 재시도 중...");
     }
     
-    scheduleNext();
+    var wait;
+    if(i >= nextRest){
+        nextRest = i + 100 + Math.floor(Math.random() * 101);
+        wait = 60000 + Math.random() * 120000;
+        log("휴식 중... " + Math.round(wait / 1000) + "초 후 재개");
+    }
+    scheduleNext(wait);
 };
 
 scheduleNext(100);
@@ -980,7 +999,7 @@ scheduleNext(100);
     }
 
     // Attach real-time input listeners
-    ['depStn', 'arrStn', 'depDate', 'depHour', 'trnNo', 'seatPref', 'pollRate', 'tgToken', 'tgChat'].forEach(id => {
+    ['depStn', 'arrStn', 'depDate', 'depHour', 'trnNo', 'seatPref', 'pollRate', 'restMode', 'tgToken', 'tgChat'].forEach(id => {
       document.getElementById(id).addEventListener('input', updateBookmarklet);
       document.getElementById(id).addEventListener('change', updateBookmarklet);
     });
