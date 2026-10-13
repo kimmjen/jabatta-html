@@ -536,25 +536,32 @@
           <option value="spec_only">특실만</option>
         </select>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label>조회 간격</label>
-        <select id="pollRate">
-          <option value="1.6-1.6">1.6초 고정 (빠름 · 제재 위험 큼)</option>
-          <option value="3-5">3~5초 무작위</option>
-          <option value="5-10" selected>5~10초 무작위 (권장)</option>
-          <option value="10-20">10~20초 무작위 (가장 안전)</option>
-        </select>
-        <span class="helper-text">간격이 짧을수록 취소표를 빨리 잡지만 코레일의 접속 제한을 받을 가능성이 커집니다.</span>
-      </div>
-
-      <div class="form-group">
-        <label>휴식</label>
-        <select id="restMode">
-          <option value="off" selected>사용 안 함</option>
-          <option value="on">사용 (100~200회마다 1~3분 휴식)</option>
-        </select>
-        <span class="helper-text">휴식 중에 나온 취소표는 놓칠 수 있습니다.</span>
+    <!-- Polling Card -->
+    <div class="card">
+      <div class="card-title"><span class="icon">⏱️</span> 조회 방식 설정 (선택 사항)</div>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 14px;">
+        건드리지 않으셔도 기본값(5~10초 무작위, 휴식 없음)으로 동작합니다. 간격이 짧을수록 취소표를 빨리 잡지만 코레일의 접속 제한을 받을 가능성이 커집니다.
+      </p>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>조회 간격</label>
+          <select id="pollRate">
+            <option value="1.6-1.6">1.6초 고정 (빠름 · 제재 위험 큼)</option>
+            <option value="3-5">3~5초 무작위</option>
+            <option value="5-10" selected>5~10초 무작위 (기본)</option>
+            <option value="10-20">10~20초 무작위 (가장 안전)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>휴식</label>
+          <select id="restMode">
+            <option value="off" selected>사용 안 함 (기본)</option>
+            <option value="on">사용 (100~200회마다 1~3분 휴식)</option>
+          </select>
+          <span class="helper-text">휴식 중에 나온 취소표는 놓칠 수 있습니다.</span>
+        </div>
       </div>
     </div>
 
