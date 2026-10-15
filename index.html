@@ -498,17 +498,12 @@
       <div class="grid-2">
         <div class="form-group">
           <label>출발역</label>
-          <input type="text" id="depStn" value="서울" placeholder="예: 서울, 용산, 광주송정, 부산">
+          <input type="text" id="depStn" value="서울" placeholder="예: 서울, 용산, 수서, 동탄, 광주송정, 부산">
         </div>
         <div class="form-group">
           <label>도착역</label>
-          <input type="text" id="arrStn" value="광주송정" placeholder="예: 광주송정, 부산, 동대구, 대전">
+          <input type="text" id="arrStn" value="광주송정" placeholder="예: 광주송정, 부산, 동대구, 대전, 동탄, 수서">
         </div>
-      </div>
-
-      <div id="srt-warning" style="display:none; margin-bottom: 16px; padding: 12px 14px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 10px; font-size: 13px; color: rgb(252, 211, 77); line-height: 1.5;">
-        ⚠️ <strong>동탄, 수서, 평택지제</strong> 역은 <strong>SRT 전용 역</strong>입니다.<br>
-        코레일(KTX) 북마클릿에서는 조회되지 않으니, SRT 앱/웹 또는 SRT 봇을 이용해 주세요. (인근 KTX역: 수원, 광명, 용산, 서울)
       </div>
 
       <div class="grid-3">
@@ -812,11 +807,6 @@
       const tgTok = document.getElementById('tgToken').value.trim();
       const tgChat = document.getElementById('tgChat').value.trim();
 
-      // SRT station warning check
-      const isSrt = ['동탄', '수서', '평택지제'].some(s => dep.includes(s) || arr.includes(s));
-      const srtWarnEl = document.getElementById('srt-warning');
-      if (srtWarnEl) srtWarnEl.style.display = isSrt ? 'block' : 'none';
-
       const btnTitle = `잡았다 (${dep}➔${arr}${trn ? ' ' + trn : ''})`;
       document.getElementById('bm-title').innerText = btnTitle;
 
@@ -846,11 +836,11 @@ if("${tgTok}" && "${tgChat}"){
 }
 
 var queryBody = new URLSearchParams({
-    "Device":"BH","Version":"999999999","Key":"korail1234567890","radJobId":"1","selGoTrain":"100",
+    "Device":"BH","Version":"999999999","Key":"korail1234567890","radJobId":"1","selGoTrain":"109",
     "txtGoAbrdDt":"${dt}","txtGoEnd":"${arr}","txtGoHour":"${tm}","txtGoStart":"${dep}","txtMenuId":"11",
     "txtPsgFlg_1":"1","txtPsgFlg_2":"0","txtPsgFlg_3":"0","txtPsgFlg_4":"0","txtPsgFlg_5":"0",
-    "txtSeatAttCd_2":"000","txtSeatAttCd_3":"000","txtSeatAttCd_4":"015","txtTrnGpCd":"100",
-    "adjStnScdlOfrFlg":"N","ebizCrossCheck":"N","rtYn":"N","srtCheckYn":"N","txtGdNo":""
+    "txtSeatAttCd_2":"000","txtSeatAttCd_3":"000","txtSeatAttCd_4":"015","txtTrnGpCd":"109",
+    "adjStnScdlOfrFlg":"N","ebizCrossCheck":"Y","rtYn":"N","srtCheckYn":"Y","txtGdNo":""
 }).toString();
 
 var keepAlive = function(){
@@ -967,8 +957,7 @@ var doTick = async function(){
                 }
             }
         } else {
-            var isSrt = ("${dep}".indexOf("동탄") >= 0 || "${dep}".indexOf("수서") >= 0 || "${arr}".indexOf("동탄") >= 0 || "${arr}".indexOf("수서") >= 0);
-            var err = (rst && (rst.h_msg_txt || rst.errMsg)) || (isSrt ? "⚠️ 동탄/수서는 SRT 전용 역입니다 (코레일 예매 불가)" : (list.length === 0 ? "조회된 열차 없음 (구간/일자 확인)" : "지정 열차(" + "${trn}" + "호) 없음"));
+            var err = (rst && (rst.h_msg_txt || rst.errMsg)) || (list.length === 0 ? "조회된 열차 없음 (구간/일자 확인)" : "지정 열차(" + "${trn}" + "호) 없음");
             log("시도 " + i + "<br><span style=\\"color:rgb(252,211,77);font-size:12px;\\">" + err + "</span>");
         }
         rst = null;
