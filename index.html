@@ -1113,8 +1113,8 @@ var doTick = async function(){
             });
             var res = await r2.json();
 
-            if(res && res.strResult !== "FAIL"){
-                var pnr = res.h_pnr_no || "확인필요";
+            if(res && res.strResult === "SUCC" && res.h_pnr_no){
+                var pnr = res.h_pnr_no;
                 window.__jabatta_stop = true;
                 window.__jabatta_running = false;
                 if(window.__jabatta_tid) clearTimeout(window.__jabatta_tid);
@@ -1146,10 +1146,10 @@ var doTick = async function(){
                 if(ov) ov.remove();
                 return;
             } else {
-                log("예약 실패: " + (res.h_msg_txt || "순간 매진"));
+                log("예약 실패: " + ((res && (res.h_msg_txt || res.message)) || "순간 매진"));
             }
         } else if(!tgTr) {
-            var err = (rst && (rst.h_msg_txt || rst.errMsg)) || (list.length === 0 ? "조회된 열차 없음 (구간/일자 확인)" : (activeTrn ? "지정 열차(" + activeTrn + "호) 없음" : "감시 대상 열차 없음"));
+            var err = (rst && (rst.h_msg_txt || rst.errMsg || rst.message)) || (list.length === 0 ? "조회된 열차 없음 (구간/일자 확인)" : (activeTrn ? "지정 열차(" + activeTrn + "호) 없음" : "감시 대상 열차 없음"));
             log("시도 " + i + "<br><span style=\\"color:rgb(252,211,77);font-size:12px;\\">" + err + "</span>");
         }
         rst = null;
