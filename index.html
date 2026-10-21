@@ -487,8 +487,9 @@
 
     <!-- Quick Presets -->
     <div class="presets">
-      <button class="preset-btn" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; font-weight: 700;" onclick="applyPreset('ktx_gwangju')">🚄 KTX 실전: 10월 31일 (서울 ➔ 광주송정 08:20)</button>
-      <button class="preset-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; font-weight: 700;" onclick="applyPreset('test_today')">🧪 코레일 테스트 (오늘 열차)</button>
+      <button class="preset-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; font-weight: 700;" onclick="applyPreset('oct23_yongsan')">🚄 타깃: 10월 23일 (용산 ➔ 광주송정 18:31 KTX 435호)</button>
+      <button class="preset-btn" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; font-weight: 700;" onclick="applyPreset('ktx_gwangju')">🚄 10월 31일 (서울 ➔ 광주송정 08:20)</button>
+      <button class="preset-btn" onclick="applyPreset('test_today')">🧪 오늘 열차 테스트</button>
     </div>
 
     <!-- Setting Card -->
@@ -769,7 +770,14 @@
 
     // Preset handler
     function applyPreset(type) {
-      if (type === 'ktx_gwangju') {
+      if (type === 'oct23_yongsan') {
+        document.getElementById('depStn').value = '용산';
+        document.getElementById('arrStn').value = '광주송정';
+        document.getElementById('depDate').value = '20261023';
+        document.getElementById('depHour').value = '1831';
+        document.getElementById('trnNo').value = '435';
+        document.getElementById('seatPref').value = 'gen_first';
+      } else if (type === 'ktx_gwangju') {
         document.getElementById('depStn').value = '서울';
         document.getElementById('arrStn').value = '광주송정';
         document.getElementById('depDate').value = '20261031';
