@@ -1117,7 +1117,9 @@ var doTick = async function(){
                 sendTg(tgMsg);
 
                 log("🎊 예약 성공! 예약번호: " + pnr);
-                alert("🎊 코레일 예약 성공!\\n\\n예약번호: " + pnr + "\\n열차: " + trTitle + " (" + seatNm + ")\\n\\n결제 기한 내에 결제를 완료하세요!");
+                alert("🎊 코레일 예약 성공!\\n\\n예약번호: " + pnr + "\\n열차: " + trTitle + " (" + seatNm + ")\\n\\n확인을 누르면 감시가 자동 종료되며, 코레일 앱/웹에서 결제를 완료하세요!");
+                var ov = document.getElementById("jabatta_overlay");
+                if(ov) ov.remove();
                 return;
             } else {
                 log("예약 실패: " + (res.h_msg_txt || "순간 매진"));
