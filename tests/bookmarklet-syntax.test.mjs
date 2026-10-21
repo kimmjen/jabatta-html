@@ -14,6 +14,7 @@ for (const [trn, tgTok, tgChat] of [['', '', ''], ['101', '123:ABC', '456']]) {
   assert.ok(code.startsWith('javascript:'));
   assert.doesNotThrow(() => new Function(code.slice('javascript:'.length)), `SyntaxError (trn=${trn})`);
   assert.ok(!code.includes('#'), `Found '#' in bookmarklet code which breaks bookmarklet URLs!`);
+  assert.ok(!code.split('\n').some(l => l.trim().startsWith('//')), `Single-line comment '//' found in bookmarklet code which breaks compressed bookmarklets!`);
   assert.ok(code.includes('var pMin=5000,pMax=10000;'), 'poll interval not embedded');
   assert.ok(!code.includes('scheduleNext(1600)'), 'fixed 1600ms interval remains');
 }

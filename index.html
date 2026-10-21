@@ -812,6 +812,7 @@
 
       // Build safe bookmarklet JS
       const code = `javascript:(function(){
+try{
 if(window.__jabatta_tid){clearTimeout(window.__jabatta_tid);}
 if(document.getElementById("jabatta_overlay"))document.getElementById("jabatta_overlay").remove();
 
@@ -932,7 +933,6 @@ var initialLoadDone = false;
 var doTick = async function(){
     if(window.__jabatta_stop) return;
     
-    // 브라우저 UI에서 감시 시작 버튼을 누르기 전에는 1회 목록 조회만 수행하고 대기
     var hasBtn = typeof document !== "undefined" && !!document.getElementById("j_start_btn");
     if(hasBtn && !window.__jabatta_running && initialLoadDone) return;
 
@@ -1093,6 +1093,9 @@ var doTick = async function(){
 };
 
 scheduleNext(100);
+}catch(err){
+    alert("⚠️ [Jabatta 오류]\\n" + (err && err.message ? err.message : err));
+}
 })();`;
 
       // a.href setter/getter는 URL로 파싱해 #·한글을 망가뜨리므로 setAttribute + 원본 보관
