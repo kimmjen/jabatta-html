@@ -829,6 +829,15 @@ window.__jabatta_running = false;
 window.__jabatta_cnt = 0;
 window.__jabatta_cur_trn = "${trn}";
 
+var stopAll = function(){
+    window.__jabatta_stop = true;
+    window.__jabatta_running = false;
+    if(window.__jabatta_tid) clearTimeout(window.__jabatta_tid);
+    if(window.__jabatta_audio) try{ window.__jabatta_audio.pause(); }catch(e){}
+    var ov = document.getElementById("jabatta_overlay");
+    if(ov) ov.remove();
+};
+
 var updateTargetDisp = function(){
     var td = document.getElementById("j_target_disp");
     if(!td) return;
@@ -841,7 +850,7 @@ el.id="jabatta_overlay";
 el.style.cssText="position:fixed;top:20px;right:20px;background:rgb(17,20,32);color:rgb(0,255,0);padding:16px;border-radius:12px;font-family:sans-serif;font-size:13px;z-index:9999999;box-shadow:0 0 25px rgba(0,255,0,0.3);line-height:1.6;min-width:320px;max-width:380px;border:1px solid rgb(0,255,0);";
 el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;display:flex;justify-content:space-between;align-items:center;">' +
   '<span>[Jabatta] 취소표 실시간 감시</span>' +
-  '<button onclick="window.__jabatta_stop=true;if(window.__jabatta_tid)clearTimeout(window.__jabatta_tid);this.parentElement.parentElement.remove()" style="background:transparent;color:rgb(255,100,100);border:1px solid rgb(255,100,100);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;">✕</button>' +
+  '<button onclick="stopAll()" style="background:transparent;color:rgb(255,100,100);border:1px solid rgb(255,100,100);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;">✕</button>' +
 '</div>' +
 '<div style="font-size:12px;color:rgb(203,213,225);margin-top:4px;">구간: ${dep} ➔ ${arr} (${dt})</div>' +
 '<div id="j_target_disp" style="margin-top:2px;"></div>' +
@@ -851,7 +860,7 @@ el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;d
 '<div id="j_train_list" style="margin-top:4px;max-height:120px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:4px;"></div>' +
 '<div style="margin-top:10px;display:flex;gap:6px;">' +
   '<button id="j_start_btn" style="flex:1;background:rgb(16,185,129);color:rgb(0,0,0);font-weight:bold;border:none;padding:9px;border-radius:6px;cursor:pointer;font-size:13px;">선택한 열차 감시 시작</button>' +
-  '<button onclick="window.__jabatta_stop=true;if(window.__jabatta_tid)clearTimeout(window.__jabatta_tid);this.parentElement.parentElement.remove()" style="background:rgba(255,68,68,0.2);color:rgb(255,100,100);border:1px solid rgba(255,68,68,0.4);padding:9px 12px;border-radius:6px;cursor:pointer;font-size:12px;">중단</button>' +
+  '<button onclick="stopAll()" style="background:rgba(255,68,68,0.2);color:rgb(255,100,100);border:1px solid rgba(255,68,68,0.4);padding:9px 12px;border-radius:6px;cursor:pointer;font-size:12px;">중단</button>' +
 '</div>';
 document.body.appendChild(el);
 updateTargetDisp();
@@ -899,7 +908,21 @@ if(startBtn){
         startBtn.innerText = "실시간 감시 중...";
         startBtn.style.background = "rgb(59,130,246)";
         startBtn.style.color = "rgb(255,255,255)";
-        log("취소표 실시간 감시 가동 중...");
+        log("취소표 실시간 감시 가동 중 (백그라운드 유지 ON)");
+
+        try{
+            if(!window.__jabatta_audio){
+                var au = document.createElement("audio");
+                au.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+                au.loop = true;
+                au.volume = 0.01;
+                au.play().catch(function(){});
+                window.__jabatta_audio = au;
+            }
+            if(navigator.wakeLock){
+                navigator.wakeLock.request("screen").catch(function(){});
+            }
+        }catch(e){}
 
         if("${tgTok}" && "${tgChat}"){
             var curName = window.__jabatta_cur_trn ? window.__jabatta_cur_trn + "호" : "전체";
@@ -1062,7 +1085,9 @@ var doTick = async function(){
             if(res && res.strResult !== "FAIL"){
                 var pnr = res.h_pnr_no || "확인필요";
                 window.__jabatta_stop = true;
+                window.__jabatta_running = false;
                 if(window.__jabatta_tid) clearTimeout(window.__jabatta_tid);
+                if(window.__jabatta_audio) try{ window.__jabatta_audio.pause(); }catch(e){}
 
                 var tgMsg = "🎉 [코레일 취소표 예약 성공!]\\n열차: " + trTitle + " (" + seatNm + ")\\n구간: ${dep} ➔ ${arr}\\n출발: " + dptTime + "\\n예약번호: " + pnr + "\\n결제 기한 내 코레일 앱에서 결제하세요!";
                 if("${tgTok}" && "${tgChat}"){
