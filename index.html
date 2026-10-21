@@ -835,6 +835,14 @@ window.__jabatta_running = false;
 window.__jabatta_cnt = 0;
 window.__jabatta_cur_trn = "${trn}";
 
+var sendTg = function(msg){
+    if(!"${tgTok}" || !"${tgChat}") return;
+    try{
+        var u = "https://api.telegram.org/bot${tgTok}/sendMessage?chat_id=${tgChat}&text=" + encodeURIComponent(msg);
+        fetch(u, {mode:"no-cors"}).catch(function(){});
+    }catch(e){}
+};
+
 var stopAll = function(){
     window.__jabatta_stop = true;
     window.__jabatta_running = false;
@@ -855,7 +863,7 @@ var el=document.createElement("div");
 el.id="jabatta_overlay";
 el.style.cssText="position:fixed;top:20px;right:20px;background:rgb(17,20,32);color:rgb(0,255,0);padding:16px;border-radius:12px;font-family:sans-serif;font-size:13px;z-index:9999999;box-shadow:0 0 25px rgba(0,255,0,0.3);line-height:1.6;min-width:320px;max-width:380px;border:1px solid rgb(0,255,0);";
 el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;display:flex;justify-content:space-between;align-items:center;">' +
-  '<span>[Jabatta] 취소표 실시간 감시</span>' +
+  '<span>[Jabatta] 취소표 감시 <span style="font-size:11px;font-weight:normal;color:' + ("${tgTok}" && "${tgChat}" ? "rgb(52,211,153)" : "rgb(148,163,184)") + ';">' + ("${tgTok}" && "${tgChat}" ? "(텔레그램 ON)" : "(텔레그램 OFF)") + '</span></span>' +
   '<button onclick="stopAll()" style="background:transparent;color:rgb(255,100,100);border:1px solid rgb(255,100,100);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;">✕</button>' +
 '</div>' +
 '<div style="font-size:12px;color:rgb(203,213,225);margin-top:4px;">구간: ${dep} ➔ ${arr} (${dt})</div>' +
@@ -930,14 +938,8 @@ if(startBtn){
             }
         }catch(e){}
 
-        if("${tgTok}" && "${tgChat}"){
-            var curName = window.__jabatta_cur_trn ? window.__jabatta_cur_trn + "호" : "전체";
-            fetch("https://api.telegram.org/bot${tgTok}/sendMessage", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({chat_id:"${tgChat}", text:"[Jabatta] 감시 시작\\n구간: ${dep} ➔ ${arr} (${dt})\\n타깃: " + curName})
-            }).catch(function(){});
-        }
+        var curName = window.__jabatta_cur_trn ? window.__jabatta_cur_trn + "호" : "전체";
+        sendTg("[Jabatta] 감시 시작\\n구간: ${dep} ➔ ${arr} (${dt})\\n타깃: " + curName);
 
         scheduleNext(100);
     };
@@ -1112,13 +1114,7 @@ var doTick = async function(){
                 }catch(e){}
 
                 var tgMsg = "🎉 [코레일 취소표 예약 성공!]\\n열차: " + trTitle + " (" + seatNm + ")\\n구간: ${dep} ➔ ${arr}\\n출발: " + dptTime + "\\n예약번호: " + pnr + "\\n결제 기한 내 코레일 앱에서 결제하세요!";
-                if("${tgTok}" && "${tgChat}"){
-                    fetch("https://api.telegram.org/bot${tgTok}/sendMessage", {
-                        method:"POST",
-                        headers:{"Content-Type":"application/json"},
-                        body:JSON.stringify({chat_id:"${tgChat}", text:tgMsg})
-                    }).catch(function(){});
-                }
+                sendTg(tgMsg);
 
                 log("🎊 예약 성공! 예약번호: " + pnr);
                 alert("🎊 코레일 예약 성공!\\n\\n예약번호: " + pnr + "\\n열차: " + trTitle + " (" + seatNm + ")\\n\\n결제 기한 내에 결제를 완료하세요!");
