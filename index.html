@@ -837,7 +837,7 @@ if("${tgTok}" && "${tgChat}"){
 
 var queryBody = new URLSearchParams({
     "Device":"BH","Version":"999999999","Key":"korail1234567890","radJobId":"1","selGoTrain":"109",
-    "txtGoAbrdDt":"${dt}","txtGoEnd":"${arr}","txtGoHour":"${tm}","txtGoStart":"${dep}","txtMenuId":"11",
+    "txtGoAbrdDt":"${dt}","txtGoEnd":"${arr}","txtGoHour":"${tm}".slice(0,2) + "0000","txtGoStart":"${dep}","txtMenuId":"11",
     "txtPsgFlg_1":"1","txtPsgFlg_2":"0","txtPsgFlg_3":"0","txtPsgFlg_4":"0","txtPsgFlg_5":"0",
     "txtSeatAttCd_2":"000","txtSeatAttCd_3":"000","txtSeatAttCd_4":"015","txtTrnGpCd":"109",
     "adjStnScdlOfrFlg":"N","ebizCrossCheck":"Y","rtYn":"N","srtCheckYn":"Y","txtGdNo":""
