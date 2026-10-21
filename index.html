@@ -848,6 +848,7 @@ var stopAll = function(){
     window.__jabatta_running = false;
     if(window.__jabatta_tid) clearTimeout(window.__jabatta_tid);
     if(window.__jabatta_audio) try{ window.__jabatta_audio.pause(); }catch(e){}
+    if(window.navigator && navigator.mediaSession) try{ navigator.mediaSession.playbackState = "none"; }catch(e){}
     var ov = document.getElementById("jabatta_overlay");
     if(ov) ov.remove();
 };
@@ -935,6 +936,14 @@ if(startBtn){
             }
             if(navigator.wakeLock){
                 navigator.wakeLock.request("screen").catch(function(){});
+            }
+            if(window.navigator && navigator.mediaSession && window.MediaMetadata){
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: "[Jabatta] 취소표 감시 중",
+                    artist: "${dep} ➔ ${arr} (${dt})",
+                    album: "타깃: " + (window.__jabatta_cur_trn ? window.__jabatta_cur_trn + "호" : "전체")
+                });
+                navigator.mediaSession.playbackState = "playing";
             }
         }catch(e){}
 
@@ -1096,6 +1105,7 @@ var doTick = async function(){
                 window.__jabatta_running = false;
                 if(window.__jabatta_tid) clearTimeout(window.__jabatta_tid);
                 if(window.__jabatta_audio) try{ window.__jabatta_audio.pause(); }catch(e){}
+                if(window.navigator && navigator.mediaSession) try{ navigator.mediaSession.playbackState = "none"; }catch(e){}
 
                 try{
                     var actx = new (window.AudioContext || window.webkitAudioContext)();
