@@ -815,16 +815,67 @@
 if(window.__jabatta_tid){clearTimeout(window.__jabatta_tid);}
 if(document.getElementById("jabatta_overlay"))document.getElementById("jabatta_overlay").remove();
 
-var el=document.createElement("div");
-el.id="jabatta_overlay";
-el.style.cssText="position:fixed;top:20px;right:20px;background:rgb(17,20,32);color:rgb(0,255,0);padding:16px;border-radius:10px;font-family:sans-serif;font-size:13px;z-index:9999999;box-shadow:0 0 20px rgba(0,255,0,0.4);line-height:1.6;min-width:300px;border:1px solid rgb(0,255,0);";
-el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;">[Jabatta] 취소표 실시간 감시</div><div>구간: ${dep} ➔ ${arr} (${dt})</div><div>타깃: ' + ("${trn}" ? "${trn}호" : ("${tm}".slice(0,2) + ":" + "${tm}".slice(2,4) + " 이후 열차")) + ' (<span style="color:rgb(252,211,77);">${pref.includes("spec_first") || pref.includes("special_first") ? "특실 우선" : (pref.includes("gen_first") || pref.includes("general_first") ? "일반실 우선" : (pref.includes("spec_only") || pref.includes("special_only") ? "특실만" : "일반실만"))}</span>)</div><hr style="border:0;border-top:1px solid rgb(50,55,75);margin:8px 0;"><div id="j_status" style="color:rgb(255,255,255);">서버 조회 준비 중...</div><button onclick="window.__jabatta_stop=true;if(window.__jabatta_tid)clearTimeout(window.__jabatta_tid);this.parentElement.remove()" style="margin-top:10px;background:rgb(255,68,68);color:rgb(255,255,255);border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;">중단하기</button>';
-document.body.appendChild(el);
-
 window.__jabatta_stop = false;
 window.__jabatta_cnt = 0;
+window.__jabatta_cur_trn = "${trn}";
+
+var updateTargetDisp = function(){
+    var td = document.getElementById("j_target_disp");
+    if(!td) return;
+    var cur = window.__jabatta_cur_trn;
+    td.innerHTML = "타깃: <span style=\\"color:rgb(56,189,248);font-weight:bold;\\">" + (cur ? cur + "호" : ("${tm}".slice(0,2) + ":" + "${tm}".slice(2,4) + " 이후 전체")) + "</span> (<span style=\\"color:rgb(252,211,77);\\">${pref.includes("spec_first") || pref.includes("special_first") ? "특실 우선" : (pref.includes("gen_first") || pref.includes("general_first") ? "일반실 우선" : (pref.includes("spec_only") || pref.includes("special_only") ? "특실만" : "일반실만"))}</span>)";
+};
+
+var el=document.createElement("div");
+el.id="jabatta_overlay";
+el.style.cssText="position:fixed;top:20px;right:20px;background:rgb(17,20,32);color:rgb(0,255,0);padding:16px;border-radius:12px;font-family:sans-serif;font-size:13px;z-index:9999999;box-shadow:0 0 25px rgba(0,255,0,0.3);line-height:1.6;min-width:320px;max-width:380px;border:1px solid rgb(0,255,0);";
+el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;display:flex;justify-content:space-between;align-items:center;">' +
+  '<span>⚡ [Jabatta] 취소표 감시</span>' +
+  '<button onclick="window.__jabatta_stop=true;if(window.__jabatta_tid)clearTimeout(window.__jabatta_tid);this.parentElement.parentElement.remove()" style="background:transparent;color:rgb(255,100,100);border:1px solid rgb(255,100,100);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;">중단 ✕</button>' +
+'</div>' +
+'<div style="font-size:12px;color:rgb(203,213,225);margin-top:4px;">구간: ${dep} ➔ ${arr} (${dt})</div>' +
+'<div id="j_target_disp" style="margin-top:2px;"></div>' +
+'<hr style="border:0;border-top:1px solid rgb(51,65,85);margin:8px 0;">' +
+'<div id="j_status" style="color:rgb(255,255,255);font-size:13px;">열차 목록 조회 중...</div>' +
+'<div style="margin-top:10px;font-size:11px;color:rgb(148,163,184);font-weight:bold;">👇 클릭 시 해당 열차 즉시 감시:</div>' +
+'<div id="j_train_list" style="margin-top:6px;max-height:130px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:4px;"></div>';
+document.body.appendChild(el);
+updateTargetDisp();
 
 var log = function(m){var e=document.getElementById("j_status");if(e)e.innerHTML=m;};
+
+var trainButtonsRendered = false;
+var renderTrainButtons = function(allTrains){
+    if(trainButtonsRendered) return;
+    var container = document.getElementById("j_train_list");
+    if(!container || !allTrains || allTrains.length === 0) return;
+    trainButtonsRendered = true;
+    container.innerHTML = "";
+
+    var makeBtn = function(label, trnVal){
+        var b = document.createElement("button");
+        var isAct = window.__jabatta_cur_trn === trnVal;
+        b.style.cssText = isAct ? "background:rgb(16,185,129);color:rgb(0,0,0);font-weight:bold;border:none;padding:5px 9px;border-radius:6px;cursor:pointer;font-size:11px;" : "background:rgba(255,255,255,0.08);color:rgb(226,232,240);border:1px solid rgba(255,255,255,0.15);padding:5px 9px;border-radius:6px;cursor:pointer;font-size:11px;";
+        b.innerText = label;
+        b.onclick = function(){
+            window.__jabatta_cur_trn = trnVal;
+            updateTargetDisp();
+            trainButtonsRendered = false;
+            renderTrainButtons(allTrains);
+        };
+        return b;
+    };
+
+    container.appendChild(makeBtn("⚡ " + "${tm}".slice(0,2) + ":" + "${tm}".slice(2,4) + " 이후 전체", ""));
+
+    for(var idx = 0; idx < allTrains.length; idx++){
+        var tr = allTrains[idx];
+        var dpt = (tr.h_dpt_tm || "").slice(0,2) + ":" + (tr.h_dpt_tm || "").slice(2,4);
+        var no = tr.h_trn_no || "";
+        var nm = tr.h_trn_clsf_nm || "";
+        container.appendChild(makeBtn("🚄 " + dpt + " " + no + "호", no));
+    }
+};
 
 if("${tgTok}" && "${tgChat}"){
     fetch("https://api.telegram.org/bot${tgTok}/sendMessage", {
@@ -881,6 +932,7 @@ var doTick = async function(){
         var rst = await r.json();
         var trs = (rst && rst.trn_infos && rst.trn_infos.trn_info) || [];
         var list = Array.isArray(trs) ? trs : (trs ? [trs] : []);
+        renderTrainButtons(list);
         
         var getSeat = function(t){
             var spe = t.h_spe_rsv_cd === "11";
@@ -903,17 +955,18 @@ var doTick = async function(){
 
         var tgTr = null;
         var st = null;
+        var activeTrn = window.__jabatta_cur_trn;
 
-        if("${trn}"){
+        if(activeTrn){
             tgTr = list.find(function(t){
                 var no = t.h_trn_no || "";
-                return no === "${trn}" || no === "${trn}".padStart(5,"0") || no.endsWith("${trn}");
+                return no === activeTrn || no === activeTrn.padStart(5,"0") || no.endsWith(activeTrn);
             });
             if(tgTr){
                 var s = getSeat(tgTr);
                 st = s.st;
                 var dptTime = (tgTr.h_dpt_tm || "").slice(0,2) + ":" + (tgTr.h_dpt_tm || "").slice(2,4);
-                log("시도 " + i + " (" + dptTime + ")<br>" + (s.spe ? "특실⭕" : "특실❌") + " / " + (s.gen ? "일반⭕" : "일반❌"));
+                log("시도 " + i + " (" + dptTime + " " + (tgTr.h_trn_no || "") + "호)<br>" + (s.spe ? "특실⭕" : "특실❌") + " / " + (s.gen ? "일반⭕" : "일반❌"));
             }
         } else {
             var candidates = list.filter(function(t){
@@ -988,7 +1041,7 @@ var doTick = async function(){
                 log("예약 실패: " + (res.h_msg_txt || "순간 매진"));
             }
         } else if(!tgTr) {
-            var err = (rst && (rst.h_msg_txt || rst.errMsg)) || (list.length === 0 ? "조회된 열차 없음 (구간/일자 확인)" : ("${trn}" ? "지정 열차(" + "${trn}" + "호) 없음" : "감시 대상 열차 없음"));
+            var err = (rst && (rst.h_msg_txt || rst.errMsg)) || (list.length === 0 ? "조회된 열차 없음 (구간/일자 확인)" : (activeTrn ? "지정 열차(" + activeTrn + "호) 없음" : "감시 대상 열차 없음"));
             log("시도 " + i + "<br><span style=\\"color:rgb(252,211,77);font-size:12px;\\">" + err + "</span>");
         }
         rst = null;
