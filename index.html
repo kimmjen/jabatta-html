@@ -1089,6 +1089,22 @@ var doTick = async function(){
                 if(window.__jabatta_tid) clearTimeout(window.__jabatta_tid);
                 if(window.__jabatta_audio) try{ window.__jabatta_audio.pause(); }catch(e){}
 
+                try{
+                    var actx = new (window.AudioContext || window.webkitAudioContext)();
+                    [523.25, 659.25, 783.99, 1046.5].forEach(function(freq, fIdx){
+                        var osc = actx.createOscillator();
+                        var g = actx.createGain();
+                        osc.connect(g); g.connect(actx.destination);
+                        osc.type = "sine";
+                        osc.frequency.setValueAtTime(freq, actx.currentTime + fIdx * 0.12);
+                        g.gain.setValueAtTime(0.3, actx.currentTime + fIdx * 0.12);
+                        g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + fIdx * 0.12 + 0.18);
+                        osc.start(actx.currentTime + fIdx * 0.12);
+                        osc.stop(actx.currentTime + fIdx * 0.12 + 0.2);
+                    });
+                    if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+                }catch(e){}
+
                 var tgMsg = "🎉 [코레일 취소표 예약 성공!]\\n열차: " + trTitle + " (" + seatNm + ")\\n구간: ${dep} ➔ ${arr}\\n출발: " + dptTime + "\\n예약번호: " + pnr + "\\n결제 기한 내 코레일 앱에서 결제하세요!";
                 if("${tgTok}" && "${tgChat}"){
                     fetch("https://api.telegram.org/bot${tgTok}/sendMessage", {
