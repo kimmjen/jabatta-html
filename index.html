@@ -832,17 +832,17 @@ var el=document.createElement("div");
 el.id="jabatta_overlay";
 el.style.cssText="position:fixed;top:20px;right:20px;background:rgb(17,20,32);color:rgb(0,255,0);padding:16px;border-radius:12px;font-family:sans-serif;font-size:13px;z-index:9999999;box-shadow:0 0 25px rgba(0,255,0,0.3);line-height:1.6;min-width:320px;max-width:380px;border:1px solid rgb(0,255,0);";
 el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;display:flex;justify-content:space-between;align-items:center;">' +
-  '<span>⚡ [Jabatta] 취소표 감시</span>' +
+  '<span>[Jabatta] 취소표 실시간 감시</span>' +
   '<button onclick="window.__jabatta_stop=true;if(window.__jabatta_tid)clearTimeout(window.__jabatta_tid);this.parentElement.parentElement.remove()" style="background:transparent;color:rgb(255,100,100);border:1px solid rgb(255,100,100);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px;">✕</button>' +
 '</div>' +
 '<div style="font-size:12px;color:rgb(203,213,225);margin-top:4px;">구간: ${dep} ➔ ${arr} (${dt})</div>' +
 '<div id="j_target_disp" style="margin-top:2px;"></div>' +
 '<hr style="border:0;border-top:1px solid rgb(51,65,85);margin:8px 0;">' +
 '<div id="j_status" style="color:rgb(255,255,255);font-size:12px;">열차 목록 불러오는 중...</div>' +
-'<div style="margin-top:8px;font-size:11px;color:rgb(148,163,184);font-weight:bold;">1️⃣ 아래에서 감시할 열차 선택:</div>' +
+'<div style="margin-top:8px;font-size:11px;color:rgb(148,163,184);font-weight:bold;">감시할 열차 선택:</div>' +
 '<div id="j_train_list" style="margin-top:4px;max-height:120px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:4px;"></div>' +
 '<div style="margin-top:10px;display:flex;gap:6px;">' +
-  '<button id="j_start_btn" style="flex:1;background:rgb(16,185,129);color:rgb(0,0,0);font-weight:bold;border:none;padding:9px;border-radius:6px;cursor:pointer;font-size:13px;">🚀 선택한 열차 감시 시작</button>' +
+  '<button id="j_start_btn" style="flex:1;background:rgb(16,185,129);color:rgb(0,0,0);font-weight:bold;border:none;padding:9px;border-radius:6px;cursor:pointer;font-size:13px;">선택한 열차 감시 시작</button>' +
   '<button onclick="window.__jabatta_stop=true;if(window.__jabatta_tid)clearTimeout(window.__jabatta_tid);this.parentElement.parentElement.remove()" style="background:rgba(255,68,68,0.2);color:rgb(255,100,100);border:1px solid rgba(255,68,68,0.4);padding:9px 12px;border-radius:6px;cursor:pointer;font-size:12px;">중단</button>' +
 '</div>';
 document.body.appendChild(el);
@@ -872,14 +872,14 @@ var renderTrainButtons = function(allTrains){
         return b;
     };
 
-    container.appendChild(makeBtn("⚡ " + "${tm}".slice(0,2) + ":" + "${tm}".slice(2,4) + " 이후 전체", ""));
+    container.appendChild(makeBtn("${tm}".slice(0,2) + ":" + "${tm}".slice(2,4) + " 이후 전체", ""));
 
     for(var idx = 0; idx < allTrains.length; idx++){
         var tr = allTrains[idx];
         var dpt = (tr.h_dpt_tm || "").slice(0,2) + ":" + (tr.h_dpt_tm || "").slice(2,4);
         var no = tr.h_trn_no || "";
         var clsf = tr.h_trn_clsf_nm || "";
-        container.appendChild(makeBtn("🚄 " + dpt + " [" + clsf + "] " + no + "호", no));
+        container.appendChild(makeBtn(dpt + " [" + clsf + "] " + no + "호", no));
     }
 };
 
@@ -888,17 +888,17 @@ if(startBtn){
     startBtn.onclick = function(){
         if(window.__jabatta_running) return;
         window.__jabatta_running = true;
-        startBtn.innerText = "🔄 실시간 감시 중...";
+        startBtn.innerText = "실시간 감시 중...";
         startBtn.style.background = "rgb(59,130,246)";
         startBtn.style.color = "rgb(255,255,255)";
-        log("🚀 감시 루프 가동 중...");
+        log("취소표 실시간 감시 가동 중...");
 
         if("${tgTok}" && "${tgChat}"){
             var curName = window.__jabatta_cur_trn ? window.__jabatta_cur_trn + "호" : "전체";
             fetch("https://api.telegram.org/bot${tgTok}/sendMessage", {
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({chat_id:"${tgChat}", text:"✅ [Jabatta] 감시 시작\\n구간: ${dep} ➔ ${arr} (${dt})\\n타깃: " + curName})
+                body:JSON.stringify({chat_id:"${tgChat}", text:"[Jabatta] 감시 시작\\n구간: ${dep} ➔ ${arr} (${dt})\\n타깃: " + curName})
             }).catch(function(){});
         }
 
@@ -961,7 +961,7 @@ var doTick = async function(){
 
         if(hasBtn && !window.__jabatta_running){
             initialLoadDone = true;
-            log("👆 위에서 원하는 열차를 클릭한 뒤 <strong>[🚀 감시 시작]</strong> 버튼을 누르세요.");
+            log("원하는 열차를 선택한 후 <strong>[선택한 열차 감시 시작]</strong> 버튼을 누르세요.");
             return;
         }
         
