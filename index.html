@@ -658,6 +658,17 @@
     const CHO = ['r', 'R', 's', 'e', 'E', 'f', 'a', 'q', 'Q', 't', 'T', 'd', 'w', 'W', 'c', 'z', 'x', 'v', 'g'];
     const JUNG = ['k', 'o', 'i', 'O', 'j', 'p', 'u', 'P', 'h', 'hk', 'ho', 'hl', 'y', 'n', 'nj', 'np', 'nl', 'b', 'm', 'ml', 'l'];
     const JONG = ['', 'r', 'R', 'rt', 's', 'sw', 'sg', 'e', 'f', 'fr', 'fa', 'fq', 'ft', 'fx', 'fv', 'fg', 'a', 'q', 'qt', 't', 'T', 'd', 'w', 'c', 'z', 'x', 'v', 'g'];
+    const SINGLE_JAMO = {
+      0x3131: 'r', 0x3132: 'R', 0x3133: 'rt', 0x3134: 's', 0x3135: 'sw', 0x3136: 'sg',
+      0x3137: 'e', 0x3138: 'E', 0x3139: 'f', 0x313a: 'fr', 0x313b: 'fa', 0x313c: 'fq',
+      0x313d: 'ft', 0x313e: 'fx', 0x313f: 'fv', 0x3140: 'fg', 0x3141: 'a', 0x3142: 'q',
+      0x3143: 'Q', 0x3144: 'qt', 0x3145: 't', 0x3146: 'T', 0x3147: 'd', 0x3148: 'w',
+      0x3149: 'W', 0x314a: 'c', 0x314b: 'z', 0x314c: 'x', 0x314d: 'v', 0x314e: 'g',
+      0x314f: 'k', 0x3150: 'o', 0x3151: 'i', 0x3152: 'O', 0x3153: 'j', 0x3154: 'p',
+      0x3155: 'u', 0x3156: 'P', 0x3157: 'h', 0x3158: 'hk', 0x3159: 'ho', 0x315a: 'hl',
+      0x315b: 'y', 0x315c: 'n', 0x315d: 'nj', 0x315e: 'np', 0x315f: 'nl', 0x3160: 'b',
+      0x3161: 'm', 0x3162: 'ml', 0x3163: 'l'
+    };
 
     function korToEng(text) {
       let res = '';
@@ -669,6 +680,8 @@
           const jung = Math.floor((offset % 588) / 28);
           const jong = offset % 28;
           res += CHO[cho] + JUNG[jung] + JONG[jong];
+        } else if (SINGLE_JAMO[c]) {
+          res += SINGLE_JAMO[c];
         } else {
           res += text[i];
         }
