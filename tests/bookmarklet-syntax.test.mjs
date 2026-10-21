@@ -13,6 +13,7 @@ for (const [trn, tgTok, tgChat] of [['', '', ''], ['101', '123:ABC', '456']]) {
   const code = make(trn, tgTok, tgChat, false);
   assert.ok(code.startsWith('javascript:'));
   assert.doesNotThrow(() => new Function(code.slice('javascript:'.length)), `SyntaxError (trn=${trn})`);
+  assert.ok(!code.includes('#'), `Found '#' in bookmarklet code which breaks bookmarklet URLs!`);
   assert.ok(code.includes('var pMin=5000,pMax=10000;'), 'poll interval not embedded');
   assert.ok(!code.includes('scheduleNext(1600)'), 'fixed 1600ms interval remains');
 }

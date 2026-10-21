@@ -517,8 +517,8 @@
         </div>
         <div class="form-group">
           <label>지정 열차 번호 (옵션)</label>
-          <input type="text" id="trnNo" value="608" placeholder="예: 608 또는 00608 (비워두면 첫 번째 열차)">
-          <span class="helper-text">숫자만 입력 (예: 608 또는 00608)</span>
+          <input type="text" id="trnNo" value="" placeholder="비워두면 출발 시간 이후 모든 열차 감시">
+          <span class="helper-text">비워두면 입력하신 출발 시간 이후의 모든 열차 중 취소표가 먼저 나오는 열차를 자동 예약합니다.</span>
         </div>
       </div>
 
@@ -797,7 +797,7 @@
       const dep = document.getElementById('depStn').value.trim() || '서울';
       const arr = document.getElementById('arrStn').value.trim() || '광주송정';
       const dt = document.getElementById('depDate').value.trim() || '20261031';
-      let tmRaw = document.getElementById('depHour').value.trim() || '0800';
+      let tmRaw = document.getElementById('depHour').value.trim().replace(/\D/g, '') || '0800';
       if (tmRaw.length <= 2) tmRaw = tmRaw.padStart(2, '0') + '00'; // HH만 입력 시 분은 00으로 간주
       const tm = tmRaw.padEnd(4, '0').slice(0, 4) + '00'; // HHMM -> HHMMSS (코레일 API 요구 포맷)
       const trn = document.getElementById('trnNo').value.trim();
@@ -818,7 +818,7 @@ if(document.getElementById("jabatta_overlay"))document.getElementById("jabatta_o
 var el=document.createElement("div");
 el.id="jabatta_overlay";
 el.style.cssText="position:fixed;top:20px;right:20px;background:rgb(17,20,32);color:rgb(0,255,0);padding:16px;border-radius:10px;font-family:sans-serif;font-size:13px;z-index:9999999;box-shadow:0 0 20px rgba(0,255,0,0.4);line-height:1.6;min-width:300px;border:1px solid rgb(0,255,0);";
-el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;">[Jabatta] 취소표 실시간 감시</div><div>구간: ${dep} ➔ ${arr} (${dt})</div><div>타깃: ${trn ? trn + "호" : "첫번째 열차"} (<span style="color:rgb(252,211,77);">${pref.includes("spec_first") || pref.includes("special_first") ? "특실 우선" : (pref.includes("gen_first") || pref.includes("general_first") ? "일반실 우선" : (pref.includes("spec_only") || pref.includes("special_only") ? "특실만" : "일반실만"))}</span>)</div><hr style="border:0;border-top:1px solid rgb(50,55,75);margin:8px 0;"><div id="j_status" style="color:rgb(255,255,255);">서버 조회 준비 중...</div><button onclick="window.__jabatta_stop=true;if(window.__jabatta_tid)clearTimeout(window.__jabatta_tid);this.parentElement.remove()" style="margin-top:10px;background:rgb(255,68,68);color:rgb(255,255,255);border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;">중단하기</button>';
+el.innerHTML='<div style="font-weight:bold;color:rgb(0,191,255);font-size:14px;">[Jabatta] 취소표 실시간 감시</div><div>구간: ${dep} ➔ ${arr} (${dt})</div><div>타깃: ' + ("${trn}" ? "${trn}호" : ("${tm}".slice(0,2) + ":" + "${tm}".slice(2,4) + " 이후 열차")) + ' (<span style="color:rgb(252,211,77);">${pref.includes("spec_first") || pref.includes("special_first") ? "특실 우선" : (pref.includes("gen_first") || pref.includes("general_first") ? "일반실 우선" : (pref.includes("spec_only") || pref.includes("special_only") ? "특실만" : "일반실만"))}</span>)</div><hr style="border:0;border-top:1px solid rgb(50,55,75);margin:8px 0;"><div id="j_status" style="color:rgb(255,255,255);">서버 조회 준비 중...</div><button onclick="window.__jabatta_stop=true;if(window.__jabatta_tid)clearTimeout(window.__jabatta_tid);this.parentElement.remove()" style="margin-top:10px;background:rgb(255,68,68);color:rgb(255,255,255);border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;">중단하기</button>';
 document.body.appendChild(el);
 
 window.__jabatta_stop = false;
@@ -882,20 +882,9 @@ var doTick = async function(){
         var trs = (rst && rst.trn_infos && rst.trn_infos.trn_info) || [];
         var list = Array.isArray(trs) ? trs : (trs ? [trs] : []);
         
-        var tgTr = "${trn}" ? list.find(function(t){
-            var no = t.h_trn_no || "";
-            return no === "${trn}" || no === "${trn}".padStart(5,"0") || no.endsWith("${trn}");
-        }) : list[0];
-
-        if(!tgTr && list.length > 0) tgTr = list[0];
-
-        if(tgTr){
-            var spe = tgTr.h_spe_rsv_cd === "11";
-            var gen = tgTr.h_gen_rsv_cd === "11";
-            var trTitle = (tgTr.h_trn_clsf_nm || "") + " " + (tgTr.h_trn_no || "");
-            var dptTime = (tgTr.h_dpt_tm || "").slice(0,2) + ":" + (tgTr.h_dpt_tm || "").slice(2,4);
-            log("시도 " + i + " (" + dptTime + ")<br>" + (spe ? "특실⭕" : "특실❌") + " / " + (gen ? "일반⭕" : "일반❌"));
-
+        var getSeat = function(t){
+            var spe = t.h_spe_rsv_cd === "11";
+            var gen = t.h_gen_rsv_cd === "11";
             var st = null;
             var pref = "${pref}";
             if(pref === "spec_only" || pref === "special_only"){
@@ -909,55 +898,97 @@ var doTick = async function(){
                 if(gen) st = "1";
                 else if(spe) st = "2";
             }
+            return { st: st, spe: spe, gen: gen };
+        };
 
-            if(st){
-                var seatNm = (st === "2" ? "특실" : "일반실");
-                log("🎉 [" + seatNm + "] 발견! 즉시 예약 중...");
-                
-                var rsvBody = new URLSearchParams({
-                    "Device":"BH","Version":"999999999","Key":"korail1234567890","hidFreeFlg":"N",
-                    "txtArvRsStnCd1":tgTr.h_arv_rs_stn_cd||"","txtArvStnConsOrdr1":tgTr.h_arv_stn_cons_ordr||"","txtArvStnRunOrdr1":tgTr.h_arv_stn_run_ordr||"",
-                    "txtDptRsStnCd1":tgTr.h_dpt_rs_stn_cd||"","txtDptStnConsOrdr1":tgTr.h_dpt_stn_cons_ordr||"","txtDptStnRunOrdr1":tgTr.h_dpt_stn_run_ordr||"",
-                    "txtDptDt1":tgTr.h_dpt_dt||"${dt}","txtDptTm1":tgTr.h_dpt_tm||"${tm}","txtGdNo":"","txtJobId":"1101",
-                    "txtJrnyCnt":"1","txtJrnySqno1":"001","txtJrnyTpCd1":"11","txtMenuId":"11","txtPsrmClCd1":st,
-                    "txtRunDt1":tgTr.h_run_dt||"${dt}","txtTrnClsfCd1":tgTr.h_trn_clsf_cd||"","txtTrnGpCd1":tgTr.h_trn_gp_cd||"",
-                    "txtTrnNo1":tgTr.h_trn_no||"","txtStndFlg":"N","txtChgFlg1":"N","txtSeatAttCd1":"000","txtSeatAttCd2":"000",
-                    "txtSeatAttCd3":"000","txtSeatAttCd4":"015","txtSeatAttCd5":"000","txtTotPsgCnt":"1","txtCompaCnt1":"1",
-                    "txtCompaCnt2":"0","txtCompaCnt3":"0","txtCompaCnt4":"0","txtCompaCnt5":"0","txtDiscKndCd1":"000",
-                    "txtDiscKndCd2":"P11","txtDiscKndCd3":"000","txtPsgTpCd1":"1","txtPsgTpCd2":"1"
-                }).toString();
+        var tgTr = null;
+        var st = null;
 
-                var r2 = await fetch("/classes/com.korail.mobile.certification.TicketReservation", {
-                    method:"POST",
-                    cache:"no-store",
-                    headers:{"Content-Type":"application/x-www-form-urlencoded"},
-                    body:rsvBody
-                });
-                var res = await r2.json();
-
-                if(res && res.strResult !== "FAIL"){
-                    var pnr = res.h_pnr_no || "확인필요";
-                    window.__jabatta_stop = true;
-                    if(window.__jabatta_tid) clearTimeout(window.__jabatta_tid);
-
-                    var tgMsg = "🎉 [코레일 취소표 예약 성공!]\\n열차: " + trTitle + " (" + seatNm + ")\\n구간: ${dep} ➔ ${arr}\\n출발: " + dptTime + "\\n예약번호: " + pnr + "\\n결제 기한 내 코레일 앱에서 결제하세요!";
-                    if("${tgTok}" && "${tgChat}"){
-                        fetch("https://api.telegram.org/bot${tgTok}/sendMessage", {
-                            method:"POST",
-                            headers:{"Content-Type":"application/json"},
-                            body:JSON.stringify({chat_id:"${tgChat}", text:tgMsg})
-                        }).catch(function(){});
-                    }
-
-                    log("🎊 예약 성공! 예약번호: " + pnr);
-                    alert("🎊 코레일 예약 성공!\\n\\n예약번호: " + pnr + "\\n열차: " + trTitle + " (" + seatNm + ")\\n\\n결제 기한 내에 결제를 완료하세요!");
-                    return;
-                } else {
-                    log("예약 실패: " + (res.h_msg_txt || "순간 매진"));
-                }
+        if("${trn}"){
+            tgTr = list.find(function(t){
+                var no = t.h_trn_no || "";
+                return no === "${trn}" || no === "${trn}".padStart(5,"0") || no.endsWith("${trn}");
+            });
+            if(tgTr){
+                var s = getSeat(tgTr);
+                st = s.st;
+                var dptTime = (tgTr.h_dpt_tm || "").slice(0,2) + ":" + (tgTr.h_dpt_tm || "").slice(2,4);
+                log("시도 " + i + " (" + dptTime + ")<br>" + (s.spe ? "특실⭕" : "특실❌") + " / " + (s.gen ? "일반⭕" : "일반❌"));
             }
         } else {
-            var err = (rst && (rst.h_msg_txt || rst.errMsg)) || (list.length === 0 ? "조회된 열차 없음 (구간/일자 확인)" : "지정 열차(" + "${trn}" + "호) 없음");
+            var candidates = list.filter(function(t){
+                var d = t.h_dpt_tm || "000000";
+                return d >= "${tm}";
+            });
+            if(candidates.length === 0) candidates = list;
+
+            for(var cIdx = 0; cIdx < candidates.length; cIdx++){
+                var cand = candidates[cIdx];
+                var s = getSeat(cand);
+                if(s.st){
+                    tgTr = cand;
+                    st = s.st;
+                    break;
+                }
+            }
+
+            if(!tgTr && candidates.length > 0){
+                var firstT = candidates[0];
+                var sFirst = getSeat(firstT);
+                var dptTime = (firstT.h_dpt_tm || "").slice(0,2) + ":" + (firstT.h_dpt_tm || "").slice(2,4);
+                log("시도 " + i + " (" + candidates.length + "대 감시 중 · " + dptTime + "~)<br>" + (sFirst.spe ? "특실⭕" : "특실❌") + " / " + (sFirst.gen ? "일반⭕" : "일반❌"));
+            }
+        }
+
+        if(tgTr && st){
+            var seatNm = (st === "2" ? "특실" : "일반실");
+            var trTitle = (tgTr.h_trn_clsf_nm || "") + " " + (tgTr.h_trn_no || "");
+            var dptTime = (tgTr.h_dpt_tm || "").slice(0,2) + ":" + (tgTr.h_dpt_tm || "").slice(2,4);
+            log("🎉 [" + trTitle + " " + seatNm + "] 발견! 즉시 예약 중...");
+            
+            var rsvBody = new URLSearchParams({
+                "Device":"BH","Version":"999999999","Key":"korail1234567890","hidFreeFlg":"N",
+                "txtArvRsStnCd1":tgTr.h_arv_rs_stn_cd||"","txtArvStnConsOrdr1":tgTr.h_arv_stn_cons_ordr||"","txtArvStnRunOrdr1":tgTr.h_arv_stn_run_ordr||"",
+                "txtDptRsStnCd1":tgTr.h_dpt_rs_stn_cd||"","txtDptStnConsOrdr1":tgTr.h_dpt_stn_cons_ordr||"","txtDptStnRunOrdr1":tgTr.h_dpt_stn_run_ordr||"",
+                "txtDptDt1":tgTr.h_dpt_dt||"${dt}","txtDptTm1":tgTr.h_dpt_tm||"${tm}","txtGdNo":"","txtJobId":"1101",
+                "txtJrnyCnt":"1","txtJrnySqno1":"001","txtJrnyTpCd1":"11","txtMenuId":"11","txtPsrmClCd1":st,
+                "txtRunDt1":tgTr.h_run_dt||"${dt}","txtTrnClsfCd1":tgTr.h_trn_clsf_cd||"","txtTrnGpCd1":tgTr.h_trn_gp_cd||"",
+                "txtTrnNo1":tgTr.h_trn_no||"","txtStndFlg":"N","txtChgFlg1":"N","txtSeatAttCd1":"000","txtSeatAttCd2":"000",
+                "txtSeatAttCd3":"000","txtSeatAttCd4":"015","txtSeatAttCd5":"000","txtTotPsgCnt":"1","txtCompaCnt1":"1",
+                "txtCompaCnt2":"0","txtCompaCnt3":"0","txtCompaCnt4":"0","txtCompaCnt5":"0","txtDiscKndCd1":"000",
+                "txtDiscKndCd2":"P11","txtDiscKndCd3":"000","txtPsgTpCd1":"1","txtPsgTpCd2":"1"
+            }).toString();
+
+            var r2 = await fetch("/classes/com.korail.mobile.certification.TicketReservation", {
+                method:"POST",
+                cache:"no-store",
+                headers:{"Content-Type":"application/x-www-form-urlencoded"},
+                body:rsvBody
+            });
+            var res = await r2.json();
+
+            if(res && res.strResult !== "FAIL"){
+                var pnr = res.h_pnr_no || "확인필요";
+                window.__jabatta_stop = true;
+                if(window.__jabatta_tid) clearTimeout(window.__jabatta_tid);
+
+                var tgMsg = "🎉 [코레일 취소표 예약 성공!]\\n열차: " + trTitle + " (" + seatNm + ")\\n구간: ${dep} ➔ ${arr}\\n출발: " + dptTime + "\\n예약번호: " + pnr + "\\n결제 기한 내 코레일 앱에서 결제하세요!";
+                if("${tgTok}" && "${tgChat}"){
+                    fetch("https://api.telegram.org/bot${tgTok}/sendMessage", {
+                        method:"POST",
+                        headers:{"Content-Type":"application/json"},
+                        body:JSON.stringify({chat_id:"${tgChat}", text:tgMsg})
+                    }).catch(function(){});
+                }
+
+                log("🎊 예약 성공! 예약번호: " + pnr);
+                alert("🎊 코레일 예약 성공!\\n\\n예약번호: " + pnr + "\\n열차: " + trTitle + " (" + seatNm + ")\\n\\n결제 기한 내에 결제를 완료하세요!");
+                return;
+            } else {
+                log("예약 실패: " + (res.h_msg_txt || "순간 매진"));
+            }
+        } else if(!tgTr) {
+            var err = (rst && (rst.h_msg_txt || rst.errMsg)) || (list.length === 0 ? "조회된 열차 없음 (구간/일자 확인)" : ("${trn}" ? "지정 열차(" + "${trn}" + "호) 없음" : "감시 대상 열차 없음"));
             log("시도 " + i + "<br><span style=\\"color:rgb(252,211,77);font-size:12px;\\">" + err + "</span>");
         }
         rst = null;
